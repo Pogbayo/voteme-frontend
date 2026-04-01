@@ -10,34 +10,37 @@ import type {
 } from '../types/election.types';
 
 class ElectionApi {
+  private readonly basePath = '/elections';   
+
   getById(id: string) {
-    return axiosInstance.get<ApiResponse<ElectionDto>>(`/election/${id}`);
+    return axiosInstance.get<ApiResponse<ElectionDto>>(`${this.basePath}/${id}`);
   }
 
   getOrganizationElections(organizationId: string, page = 1, pageSize = 20) {
     return axiosInstance.get<ApiResponse<PagedElectionResponse>>(
-      `/election/organization/${organizationId}?page=${page}&pageSize=${pageSize}`
+      `${this.basePath}/organization/${organizationId}?page=${page}&pageSize=${pageSize}`
     );
   }
 
   create(dto: CreateElectionDto) {
-    return axiosInstance.post<ApiResponse<ElectionDto>>('/election', dto);
+    console.log('Creating election with DTO <electionApi.ts>:', dto);
+    return axiosInstance.post<ApiResponse<ElectionDto>>(this.basePath, dto);
   }
 
   update(id: string, dto: UpdateElectionDto) {
-    return axiosInstance.put<ApiResponse<boolean>>(`/election/${id}`, dto);
+    return axiosInstance.patch<ApiResponse<ElectionDto>>(`${this.basePath}/${id}`, dto);
   }
 
   delete(id: string) {
-    return axiosInstance.delete<ApiResponse<boolean>>(`/election/${id}`);
+    return axiosInstance.delete<ApiResponse<boolean>>(`${this.basePath}/${id}`);
   }
 
   open(id: string, dto: OpenElectionDto) {
-    return axiosInstance.post<ApiResponse<boolean>>(`/election/${id}/open`, dto);
+    return axiosInstance.post<ApiResponse<ElectionDto>>(`${this.basePath}/${id}/open`, dto);
   }
 
   getResults(id: string) {
-    return axiosInstance.get<ApiResponse<ElectionResultDto>>(`/election/${id}/results`);
+    return axiosInstance.get<ApiResponse<ElectionResultDto>>(`${this.basePath}/${id}/results`);
   }
 }
 

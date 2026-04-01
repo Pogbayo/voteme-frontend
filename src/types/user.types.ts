@@ -1,3 +1,5 @@
+import type { OrgRoleType } from "../constants/roles"
+
 export interface UserDto {
   id: string
   firstName: string
@@ -5,6 +7,16 @@ export interface UserDto {
   displayName: string
   email: string
   roles: string[]
+  createdAt: string
+}
+
+export interface OrganizationUserDto {
+  id: string
+  firstName: string
+  lastName: string
+  displayName: string
+  email: string
+  role:  OrgRoleType
   createdAt: string
 }
 

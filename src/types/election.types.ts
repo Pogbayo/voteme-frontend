@@ -17,7 +17,7 @@ export interface ElectionDto {
 
 export interface CreateElectionDto {
   name: string
-  description?: string
+  description?: string 
   isPrivate: boolean
   organizationId: string
 }

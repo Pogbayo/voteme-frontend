@@ -41,16 +41,20 @@ export const useAuthStore = create<AuthState>()(
 
           const { accessToken, ...user } = response.data.data
 
+          // ✅ ONLY Zustand handles persistence
           set({
             user,
             token: accessToken,
             isAuthenticated: true,
-            isLoading: false
+            isLoading: false,
           })
         } catch (error: any) {
           set({
-            error: error.response?.data?.message ?? error.message ?? 'Login failed',
-            isLoading: false
+            error:
+              error.response?.data?.message ??
+              error.message ??
+              'Login failed',
+            isLoading: false,
           })
           throw error
         }
@@ -70,12 +74,15 @@ export const useAuthStore = create<AuthState>()(
             user,
             token: accessToken,
             isAuthenticated: true,
-            isLoading: false
+            isLoading: false,
           })
         } catch (error: any) {
           set({
-            error: error.response?.data?.message ?? error.message ?? 'Registration failed',
-            isLoading: false
+            error:
+              error.response?.data?.message ??
+              error.message ??
+              'Registration failed',
+            isLoading: false,
           })
           throw error
         }
@@ -88,14 +95,13 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             token: null,
-            isAuthenticated: false
+            isAuthenticated: false,
           })
         }
       },
 
       clearError: () => set({ error: null }),
     }),
-
     {
       name: 'auth-storage',
       partialize: (state) => ({

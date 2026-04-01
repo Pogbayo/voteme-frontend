@@ -1,12 +1,14 @@
 import { create } from 'zustand'
-import type { UpdateUserDto, UserDto } from '../types/user.types'
+import type { OrganizationUserDto, UpdateUserDto, UserDto } from '../types/user.types'
 import { userApi } from '../api/userApi'
 
 interface UserState {
   loading: boolean
   error: string | null
   user: UserDto | null
+  orgUser: OrganizationUserDto | null
   users: UserDto[]
+  orgUsers: OrganizationUserDto[]
   getUser: (userId: string) => Promise<void>
   updateUser: (userId: string, dto: UpdateUserDto) => Promise<void>
   deleteUser: (userId: string) => Promise<void>
@@ -19,7 +21,8 @@ export const useUserStore = create<UserState>((set) => ({
   error: null,
   user: null,
   users: [],
-
+  orgUser: null,
+  orgUsers: [],
   getUser: async (userId: string) => {
     set({ loading: true, error: null })
     try {
@@ -37,7 +40,7 @@ export const useUserStore = create<UserState>((set) => ({
     try {
       const response = await userApi.update(userId, dto)
       if (!response.data.success) throw new Error(response.data.message)
-      set({ user: response.data.data, loading: false })
+      set({ orgUser: response.data.data, loading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, loading: false })
       throw error
@@ -64,7 +67,7 @@ export const useUserStore = create<UserState>((set) => ({
     try {
       const response = await userApi.getOrganizationUsers(organizationId, page, pageSize)
       if (!response.data.success || !response.data.data) throw new Error(response.data.message)
-      set({ users: response.data.data || [], loading: false })
+      set({ orgUsers: response.data.data || [], loading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, loading: false })
       throw error

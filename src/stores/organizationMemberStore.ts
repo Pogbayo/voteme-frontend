@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { organizationMemberApi } from '../api/organizationMemberApi'
-import type { OrganizationMemberDto, PendingMemberDto } from '../types/member.types'
+import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/member.types'
 import { useOrganizationStore } from './organizationStore'
 
 interface MemberState {
@@ -18,7 +18,7 @@ interface MemberState {
   removeMember: (organizationId: string, userId: string) => Promise<void>
   promoteToAdmin: (organizationId: string, userId: string) => Promise<void>
   demoteFromAdmin: (organizationId: string, userId: string) => Promise<void>
-  joinOrganization: (uniqueKey: string) => Promise<void>
+  joinOrganization: (dto: JoinOrgDto) => Promise<void>
   leaveOrganization: (organizationId: string) => Promise<void>
   clearError: () => void
 }
@@ -152,10 +152,10 @@ rejectMember: async (organizationId, userId) => {
     }
   },
 
-  joinOrganization: async (uniqueKey) => {
+  joinOrganization: async (dto:JoinOrgDto) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await organizationMemberApi.join(uniqueKey)
+      const response = await organizationMemberApi.join(dto)
       if (!response.data.success)
         throw new Error(response.data.message)
       set({ isLoading: false })

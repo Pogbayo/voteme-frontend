@@ -10,6 +10,6 @@ export default {
     extend: {},
   },
   plugins: [
-    forms
+    forms()
   ],
 }

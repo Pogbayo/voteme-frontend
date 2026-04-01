@@ -13,8 +13,8 @@ import { electionApi } from '../api/electionApi'
 interface ElectionState {
   elections: ElectionDto[]
   currentElection: ElectionDto | null
-  results: ElectionResultDto | null
-  totalCount: number
+  electionResults: ElectionResultDto | null
+  totalElectionCount: number
   isLoading: boolean
   error: string | null
 
@@ -32,8 +32,8 @@ interface ElectionState {
 export const useElectionStore = create<ElectionState>((set) => ({
   elections: [],
   currentElection: null,
-  results: null,
-  totalCount: 0,
+  electionResults: null,
+  totalElectionCount: 0,
   isLoading: false,
   error: null,
 
@@ -58,7 +58,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
         throw new Error(response.data.message)
       set({
         elections: response.data.data.items,
-        totalCount: response.data.data.totalCount,
+        totalElectionCount: response.data.data.totalCount,
         isLoading: false
       })
     } catch (error: any) {
@@ -70,6 +70,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
   createElection: async (dto) => {
     set({ isLoading: true, error: null })
     try {
+          console.log('Creating election with DTO <electionStore.ts>:', dto);
       const response = await electionApi.create(dto)
       if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
@@ -131,7 +132,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
       const response = await electionApi.getResults(id)
       if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
-      set({ results: response.data.data, isLoading: false })
+      set({ electionResults: response.data.data, isLoading: false })
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
       throw error

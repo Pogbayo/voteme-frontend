@@ -37,7 +37,7 @@ class CandidateApi {
     if (dto.bio) formData.append('bio', dto.bio)
     if (dto.photoFile) formData.append('photoFile', dto.photoFile)
 
-    return axiosInstance.patch<ApiResponse<boolean>>(
+    return axiosInstance.patch<ApiResponse<CandidateDto>>(
       `/Candidate/${candidateId}`,
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }

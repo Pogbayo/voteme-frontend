@@ -21,4 +21,5 @@ export interface PendingMemberDto {
 
 export interface JoinOrgDto {
   uniqueKey: string
+  displayName:string
 }

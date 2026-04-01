@@ -6,8 +6,6 @@ export interface OrganizationDto {
   logoUrl: string
   uniqueKey: string
   isActive: boolean
-  adminId: string
-  adminName: string
   createdAt: string
 }
 
