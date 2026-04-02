@@ -11,6 +11,7 @@ interface MemberState {
   isUpdated: boolean
   isDeleted: boolean
 
+  clearMembers: () => void
   getMembers: (organizationId: string, page?: number, pageSize?: number) => Promise<void>
   getPendingMembers: (organizationId: string) => Promise<void>
   approveMember: (organizationId: string, userId: string) => Promise<void>
@@ -184,4 +185,9 @@ rejectMember: async (organizationId, userId) => {
   },
 
   clearError: () => set({ error: null }),
+  clearMembers: () => set({
+  members: [],
+  pendingMembers: [],
+  error: null,
+}),
 }))

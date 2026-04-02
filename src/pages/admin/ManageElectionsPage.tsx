@@ -5,7 +5,7 @@ import { useOrganization } from '../../hooks/useOrganization'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { formatDate } from '../../utils/formatDate'
+import { formatDate, convertLocalToUTC } from '../../utils/formatDate'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -28,6 +28,7 @@ const ManageElectionsPage = () => {
     createElection,
     deleteElection,
     openElection,
+    getElection,
     isLoading,
     error,
     clearError,
@@ -67,17 +68,36 @@ const ManageElectionsPage = () => {
     }
   }
 
-  const handleOpen = async (electionId: string) => {
-    if (!endDate) return
-    try {
-      await openElection(electionId, { endDate: new Date(endDate).toISOString() })
-      setOpeningId(null)
-      setEndDate('')
-      if (currentOrganization?.id) getOrganizationElections(currentOrganization.id)
-    } catch (err) {
-      console.error(err)
-    }
+const handleOpen = async (electionId: string) => {
+  if (!endDate) {
+    alert("Please select an end date");
+    return;
   }
+
+  try {
+    // Fetch full election details (this should include categories)
+    const response = await getElection(electionId);
+    const election = response; // getElection now returns the election data
+    if (!election || !election.categories || election.categories.length === 0) {
+      alert("This election has no categories yet.\n\nPlease add at least one category before opening the election.");
+      return;
+    }
+
+    // Proceed to open the election
+    await openElection(electionId, { endDate: convertLocalToUTC(endDate) });
+
+    setOpeningId(null);
+    setEndDate('');
+
+    // Refresh the list
+    if (currentOrganization?.id) {
+      await getOrganizationElections(currentOrganization.id);
+    }
+  } catch (err: any) {
+    const message = err.response?.data?.message || "Failed to open election";
+    alert(message);
+  }
+};
 
   return (
     <div className='flex flex-col gap-5'>
@@ -175,29 +195,34 @@ const ManageElectionsPage = () => {
                 </div>
 
                 {isOpening && (
-                  <div className='flex items-center gap-2 mt-3'>
-                    <input
-                      type='datetime-local'
-                      value={endDate}
-                      onChange={ev => setEndDate(ev.target.value)}
-                      className='px-2 py-1.5 rounded-[6px] text-[12px] border outline-none'
-                      style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                    />
-                    <button
-                      onClick={() => handleOpen(e.id)}
-                      disabled={!endDate}
-                      className='px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-white disabled:opacity-50'
-                      style={{ background: 'var(--accent)' }}
-                    >
-                      Confirm open
-                    </button>
-                    <button
-                      onClick={() => setOpeningId(null)}
-                      className='text-[12px]'
-                      style={{ color: 'var(--text3)' }}
-                    >
-                      Cancel
-                    </button>
+                  <div className='flex flex-col gap-2 mt-3'>
+                    <div className='flex items-center gap-2'>
+                      <input
+                        type='datetime-local'
+                        value={endDate}
+                        onChange={ev => setEndDate(ev.target.value)}
+                        className='px-2 py-1.5 rounded-[6px] text-[12px] border outline-none'
+                        style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      />
+                      <button
+                        onClick={() => handleOpen(e.id)}
+                        disabled={!endDate}
+                        className='px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-white disabled:opacity-50'
+                        style={{ background: 'var(--accent)' }}
+                      >
+                        Confirm open
+                      </button>
+                      <button
+                        onClick={() => setOpeningId(null)}
+                        className='text-[12px]'
+                        style={{ color: 'var(--text3)' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <div className='text-[11px] text-left' style={{ color: 'var(--text3)' }}>
+                      Set the closing date/time here. Voting becomes unavailable after this moment.
+                    </div>
                   </div>
                 )}
               </div>

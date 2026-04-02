@@ -1,19 +1,13 @@
-import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import { useUIStore } from '../../stores/uiStore'
 
 const DashboardLayout = () => {
-  const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const { setMobileOpen } = useUIStore()
 
   return (
     <div className='flex h-screen overflow-hidden' style={{ background: 'var(--bg)' }}>
-      <Sidebar
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-        mobileOpen={mobileOpen}
-        setMobileOpen={setMobileOpen}
-      />
+      <Sidebar />
 
       <div className='flex flex-col flex-1 overflow-hidden'>
 
@@ -34,8 +28,13 @@ const DashboardLayout = () => {
             </svg>
           </button>
           <div className='flex items-center gap-2'>
-            <div className='w-[26px] h-[26px] rounded-[6px] flex items-center justify-center' style={{ background: 'var(--accent)' }}>
-              <svg width='14' height='14' viewBox='0 0 16 16' fill='white'><path d='M8 1L2 5v6l6 4 6-4V5z'/></svg>
+            <div
+              className='w-[26px] h-[26px] rounded-[6px] flex items-center justify-center'
+              style={{ background: 'var(--accent)' }}
+            >
+              <svg width='14' height='14' viewBox='0 0 16 16' fill='white'>
+                <path d='M8 1L2 5v6l6 4 6-4V5z'/>
+              </svg>
             </div>
             <span className='text-[15px] font-medium' style={{ color: 'var(--text)' }}>VoteMe</span>
           </div>

@@ -12,13 +12,13 @@ export interface OrganizationDto {
 export interface CreateOrganizationDto {
   organizationName: string
   description?: string
-  adminFirstName: string
-  adminLastName: string
+  adminFirstName?: string
+  adminLastName?: string
   adminDisplayName?: string
   adminEmail: string
-  adminPhoneNumber: string
+  adminPhoneNumber?: string
   logoFile?: File
-  password: string
+  password?: string 
 }
 
 export interface CreatedOrganizationDto {

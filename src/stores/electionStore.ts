@@ -4,11 +4,9 @@ import type {
   CreateElectionDto,
   UpdateElectionDto,
   OpenElectionDto,
-  ElectionResultDto,  
+  ElectionResultDto,
 } from '../types/election.types'
-
 import { electionApi } from '../api/electionApi'
-
 
 interface ElectionState {
   elections: ElectionDto[]
@@ -18,13 +16,19 @@ interface ElectionState {
   isLoading: boolean
   error: string | null
 
-  getElection: (id: string) => Promise<void>
+  clearElections: () => void
+  getElection: (id: string) => Promise<ElectionDto>
   getOrganizationElections: (organizationId: string, page?: number, pageSize?: number) => Promise<void>
   createElection: (dto: CreateElectionDto) => Promise<void>
   updateElection: (id: string, dto: UpdateElectionDto) => Promise<void>
   deleteElection: (id: string) => Promise<void>
   openElection: (id: string, dto: OpenElectionDto) => Promise<void>
   getResults: (id: string) => Promise<void>
+
+  // ✅ Internal — called by category store to sync categories
+  syncCategoryAdded: (electionId: string, category: import('../types/category.types').ElectionCategoryDto) => void
+  syncCategoryDeleted: (electionId: string, categoryId: string) => void
+
   clearError: () => void
   clearCurrentElection: () => void
 }
@@ -44,6 +48,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
       if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
       set({ currentElection: response.data.data, isLoading: false })
+      return response.data.data
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
       throw error
@@ -59,7 +64,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
       set({
         elections: response.data.data.items,
         totalElectionCount: response.data.data.totalCount,
-        isLoading: false
+        isLoading: false,
       })
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
@@ -70,13 +75,14 @@ export const useElectionStore = create<ElectionState>((set) => ({
   createElection: async (dto) => {
     set({ isLoading: true, error: null })
     try {
-          console.log('Creating election with DTO <electionStore.ts>:', dto);
       const response = await electionApi.create(dto)
       if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
+      // ✅ Add new election to the list
       set((state) => ({
         elections: [response.data.data!, ...state.elections],
-        isLoading: false
+        totalElectionCount: state.totalElectionCount + 1,
+        isLoading: false,
       }))
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
@@ -88,9 +94,17 @@ export const useElectionStore = create<ElectionState>((set) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await electionApi.update(id, dto)
-      if (!response.data.success)
+      if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
-      set({ isLoading: false })
+
+      const updated = response.data.data
+
+      // ✅ Update the election in the list and currentElection if it matches
+      set((state) => ({
+        elections: state.elections.map(e => e.id === id ? updated : e),
+        currentElection: state.currentElection?.id === id ? updated : state.currentElection,
+        isLoading: false,
+      }))
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
       throw error
@@ -103,9 +117,13 @@ export const useElectionStore = create<ElectionState>((set) => ({
       const response = await electionApi.delete(id)
       if (!response.data.success)
         throw new Error(response.data.message)
+
+      // ✅ Remove from list
       set((state) => ({
         elections: state.elections.filter(e => e.id !== id),
-        isLoading: false
+        totalElectionCount: state.totalElectionCount - 1,
+        currentElection: state.currentElection?.id === id ? null : state.currentElection,
+        isLoading: false,
       }))
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
@@ -117,9 +135,17 @@ export const useElectionStore = create<ElectionState>((set) => ({
     set({ isLoading: true, error: null })
     try {
       const response = await electionApi.open(id, dto)
-      if (!response.data.success)
+      if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
-      set({ isLoading: false })
+
+      const updated = response.data.data
+
+      // ✅ Update election status in list and currentElection
+      set((state) => ({
+        elections: state.elections.map(e => e.id === id ? updated : e),
+        currentElection: state.currentElection?.id === id ? updated : state.currentElection,
+        isLoading: false,
+      }))
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
       throw error
@@ -139,6 +165,41 @@ export const useElectionStore = create<ElectionState>((set) => ({
     }
   },
 
+  // ✅ Called by category store after create — adds category to election
+  syncCategoryAdded: (electionId, category) => {
+    set((state) => ({
+      elections: state.elections.map(e =>
+        e.id === electionId
+          ? { ...e, categories: [...e.categories, category] }
+          : e
+      ),
+      currentElection: state.currentElection?.id === electionId
+        ? { ...state.currentElection, categories: [...state.currentElection.categories, category] }
+        : state.currentElection,
+    }))
+  },
+
+  // ✅ Called by category store after delete — removes category from election
+  syncCategoryDeleted: (electionId, categoryId) => {
+    set((state) => ({
+      elections: state.elections.map(e =>
+        e.id === electionId
+          ? { ...e, categories: e.categories.filter(c => c.id !== categoryId) }
+          : e
+      ),
+      currentElection: state.currentElection?.id === electionId
+        ? { ...state.currentElection, categories: state.currentElection.categories.filter(c => c.id !== categoryId) }
+        : state.currentElection,
+    }))
+  },
+
   clearError: () => set({ error: null }),
   clearCurrentElection: () => set({ currentElection: null }),
+  clearElections: () => set({
+  elections: [],
+  currentElection: null,
+  electionResults: null,
+  totalElectionCount: 0,
+  error: null,
+}),
 }))

@@ -15,7 +15,7 @@ interface OrganizationState {
   createOrganization: (data: CreateOrganizationDto) => Promise<void>
   updateOrganization: (id: string, data: UpdateOrganizationDto) => Promise<void>
   deleteOrganization: (id: string) => Promise<void>
-  setCurrentOrganization: (org: OrganizationDto) => void
+  setCurrentOrganization: (org: OrganizationDto | null) => void
   hydrateOrganization: () => Promise<void>
   clearError: () => void
 }
@@ -65,11 +65,15 @@ export const useOrganizationStore = create<OrganizationState>()(
           }
         }
       },
-
-      setCurrentOrganization: (org) => {
-        localStorage.setItem('currentOrganizationId', org.id)
-        set({ currentOrganization: org })
-      },
+      
+        setCurrentOrganization: (org) => {
+          if (org === null) {
+            localStorage.removeItem('currentOrganizationId')
+          } else {
+            localStorage.setItem('currentOrganizationId', org.id)
+          }
+          set({ currentOrganization: org })
+        },
 
       createOrganization: async (data) => {
         set({ isLoading: true, error: null })

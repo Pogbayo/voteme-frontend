@@ -14,6 +14,7 @@ import ElectionsPage from '../pages/elections/ElectionsPage'
 import MembersPage from '../pages/organization/MembersPage'
 import OrganizationPage from '../pages/organization/OrganizationPage'
 import VotingPage from '../pages/voting/VotingPage'
+import CreateOrganizationPage from '../pages/organization/CreateOrganizationPage'
 
 const AppRouter = () => {
   return (
@@ -44,7 +45,8 @@ const AppRouter = () => {
 
             {/* Organization */}
             <Route path='/organization/:organizationId' element={<OrganizationPage />} />
-            <Route path='/organization/:organizationId/members' element={<MembersPage />} />
+            <Route path='/organization/members' element={<MembersPage />} />
+            <Route path='/organization/create-organization' element={<CreateOrganizationPage />} />
 
             {/* Admin only routes */}
             <Route element={<ProtectedRoute requiredRole='OrgAdmin' />}>

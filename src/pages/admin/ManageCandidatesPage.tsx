@@ -17,7 +17,7 @@ type FormData = z.infer<typeof schema>
 
 const ManageCandidatesPage = () => {
   const { electionId, categoryId } = useParams<{ electionId: string; categoryId: string }>()
-  const { candidates, getCategoryCandidates, createCandidate, deleteCandidate, isLoading } = useCandidate()
+  const { candidates, getCategoryCandidates, createCandidate, deleteCandidate, isLoading, error, clearError } = useCandidate()
   const { category, getElectionCategory } = useElectionCategory()
   const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
@@ -45,7 +45,10 @@ const ManageCandidatesPage = () => {
       reset()
       setPhotoFile(null)
       setShowForm(false)
-    } catch {}
+      clearError()
+    } catch {
+      // error is kept in store.error for display
+    }
   }
 
   const colors = ['#7c3aed', '#0891b2', '#059669', '#e8571a', '#b45309', '#1d4ed8']
@@ -73,6 +76,12 @@ const ManageCandidatesPage = () => {
           {showForm ? 'Cancel' : '+ Add candidate'}
         </button>
       </div>
+
+      {error && (
+        <div className='rounded-[8px] p-3 border mb-3' style={{ background: 'rgba(220, 38, 38, 0.1)', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+          {error}
+        </div>
+      )}
 
       {showForm && (
         <div className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
