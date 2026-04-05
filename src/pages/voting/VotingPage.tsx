@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useElection } from '../../hooks/useElection'
 import { useVote } from '../../hooks/useVote'
-import type { ElectionCategoryDto } from '../../types/category.types'
+import type { ElectionCategoryDto } from '../../types/electionCategory.types'
 import type { CandidateDto } from '../../types/candidate.types'
 
 const candidateColors = [

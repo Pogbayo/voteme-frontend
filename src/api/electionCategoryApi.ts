@@ -5,44 +5,44 @@ import  type {
   CreateElectionCategoryDto,
   UpdateElectionCategoryDto,
   ElectionCategoryResultDto,
-} from '../types/category.types'
+} from '../types/electionCategory.types'
 
 class ElectionCategoryApi {
   getById(electionCategoryId: string) {
     return axiosInstance.get<ApiResponse<ElectionCategoryDto>>(
-      `/ElectionCategory/${electionCategoryId}`
+      `/electioncategory/${electionCategoryId}`
     )
   }
 
   create(dto: CreateElectionCategoryDto) {
     return axiosInstance.post<ApiResponse<ElectionCategoryDto>>(
-      '/ElectionCategory',
+      '/electioncategory',
       dto
     )
   }
 
   update(electionCategoryId: string, dto: UpdateElectionCategoryDto) {
     return axiosInstance.patch<ApiResponse<boolean>>(
-      `/ElectionCategory/${electionCategoryId}`,
+      `/electioncategory/${electionCategoryId}`,
       dto
     )
   }
 
   delete(electionCategoryId: string) {
     return axiosInstance.delete<ApiResponse<boolean>>(
-      `/ElectionCategory/${electionCategoryId}`
+      `/electioncategory/${electionCategoryId}`
     )
   }
 
   getByElection(electionId: string) {
     return axiosInstance.get<ApiResponse<ElectionCategoryDto[]>>(
-      `/ElectionCategory/election/${electionId}`
+      `/electioncategory/election/${electionId}`
     )
   }
 
   getElectionCategoryResults(electionCategoryId: string) {
     return axiosInstance.get<ApiResponse<ElectionCategoryResultDto>>(
-      `/ElectionCategory/${electionCategoryId}/results`
+      `/electioncategory/${electionCategoryId}/results`
     )
   }
 }

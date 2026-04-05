@@ -17,7 +17,8 @@ export const useOrganizationMember = () => {
   const joinOrganization = useOrganizationMemberStore((state) => state.joinOrganization)
   const leaveOrganization = useOrganizationMemberStore((state) => state.leaveOrganization)
   const clearError = useOrganizationMemberStore((state) => state.clearError)
-
+  const memberShip = useOrganizationMemberStore((state) => state.memberShip)
+  const getOrganizationMembership = useOrganizationMemberStore((state) => state.getOrganizationMembership)  
   return {
     members,
     pendingMembers,
@@ -25,6 +26,8 @@ export const useOrganizationMember = () => {
     error,
     isUpdated,
     isDeleted,
+    memberShip,
+     getOrganizationMembership,
     getMembers,
     getPendingMembers,
     approveMember,

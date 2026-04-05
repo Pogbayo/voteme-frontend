@@ -14,32 +14,17 @@ class CandidateApi {
   }
 
   create(dto: CreateCandidateDto) {
-    const formData = new FormData()
-    formData.append('firstName', dto.firstName)
-    formData.append('lastName', dto.lastName)
-    formData.append('electionCategoryId', dto.electionCategoryId)
-    if (dto.displayName) formData.append('displayName', dto.displayName)
-    if (dto.bio) formData.append('bio', dto.bio)
-    if (dto.photoFile) formData.append('photoFile', dto.photoFile)
-
     return axiosInstance.post<ApiResponse<CandidateDto>>(
       '/Candidate',
-      formData,
+      dto,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
   }
 
   update(candidateId: string, dto: UpdateCandidateDto) {
-    const formData = new FormData()
-    if (dto.firstName) formData.append('firstName', dto.firstName)
-    if (dto.lastName) formData.append('lastName', dto.lastName)
-    if (dto.displayName) formData.append('displayName', dto.displayName)
-    if (dto.bio) formData.append('bio', dto.bio)
-    if (dto.photoFile) formData.append('photoFile', dto.photoFile)
-
     return axiosInstance.patch<ApiResponse<CandidateDto>>(
       `/Candidate/${candidateId}`,
-      formData,
+      dto,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
   }

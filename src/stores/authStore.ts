@@ -41,7 +41,6 @@ export const useAuthStore = create<AuthState>()(
 
           const { accessToken, ...user } = response.data.data
 
-          // ✅ ONLY Zustand handles persistence
           set({
             user,
             token: accessToken,

@@ -33,11 +33,11 @@ const LoginPage = () => {
   }, [])
 
   const onSubmit = async (data: FormData) => {
+    clearError()
     try {
       await login(data)
       navigate('/dashboard')
     } catch {
-      // error handled in store
     }
   }
 

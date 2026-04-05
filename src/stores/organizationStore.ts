@@ -10,8 +10,9 @@ interface OrganizationState {
   error: string | null
   isUpdated: boolean
   isDeleted: boolean
-
+  totalVotes: number | null
   getUserOrganizations: () => Promise<void>
+  getOrganizationVotesCount : (organizationId: string) => Promise<void>
   createOrganization: (data: CreateOrganizationDto) => Promise<void>
   updateOrganization: (id: string, data: UpdateOrganizationDto) => Promise<void>
   deleteOrganization: (id: string) => Promise<void>
@@ -29,6 +30,7 @@ export const useOrganizationStore = create<OrganizationState>()(
       error: null,
       isUpdated: false,
       isDeleted: false,
+      totalVotes: null,
 
       getUserOrganizations: async () => {
         set({ isLoading: true, error: null })
@@ -97,15 +99,23 @@ export const useOrganizationStore = create<OrganizationState>()(
         }
       },
 
+      getOrganizationVotesCount: async (organizationId) => {
+        set({ isLoading: true, error: null })  
+        try {
+          const response = await organizationApi.getOrganizationVotesCount(organizationId)
+          if (!response.data.success || response.data.data === undefined)
+            throw new Error(response.data.message)
+           set({ totalVotes: response.data.data, isLoading: false })
+        } catch (error: any) {
+          set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+          throw error
+        }
+      },
+
       updateOrganization: async (id, data) => {
         set({ isLoading: true, error: null, isUpdated: false })
         try {
-          const formData = new FormData()
-          formData.append('name', data.name)
-          if (data.description) formData.append('description', data.description)
-          if (data.logo) formData.append('logo', data.logo)
-
-          const response = await organizationApi.update(id, formData)
+          const response = await organizationApi.update(id, data)
           if (!response.data.success)
             throw new Error(response.data.message)
           set((state) => ({

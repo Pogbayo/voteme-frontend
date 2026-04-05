@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { organizationMemberApi } from '../api/organizationMemberApi'
-import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/member.types'
+import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/organizationMember.types'
 import { useOrganizationStore } from './organizationStore'
 
 interface MemberState {
@@ -10,7 +10,8 @@ interface MemberState {
   error: string | null
   isUpdated: boolean
   isDeleted: boolean
-
+  memberShip: OrganizationMemberDto | null
+  getOrganizationMembership: (organizationId: string, userId: string) => Promise<void>
   clearMembers: () => void
   getMembers: (organizationId: string, page?: number, pageSize?: number) => Promise<void>
   getPendingMembers: (organizationId: string) => Promise<void>
@@ -58,7 +59,7 @@ export const useOrganizationMemberStore = create<MemberState>((set) => ({
   error: null,
   isUpdated: false,
   isDeleted: false,
-
+  memberShip: null,
   getMembers: async (organizationId, page, pageSize) => {
      await getMembersAction(set, organizationId, page, pageSize)
   },
@@ -119,6 +120,18 @@ rejectMember: async (organizationId, userId) => {
     }
   },
 
+  getOrganizationMembership: async (organizationId, userId) => {
+    set({ isLoading: true, error: null, memberShip: null }) 
+    try {
+      const response = await organizationMemberApi.getMemberShip(organizationId, userId)
+      set({ memberShip: response.data.data, isLoading: false })
+      console.log('Membership status:', response.data.data) // Debug log
+    } catch (error: any) {
+      set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+      throw error
+    }
+  },
+
   promoteToAdmin: async (organizationId, userId) => {
     set({ isLoading: true, error: null, isUpdated: false })
     try {
@@ -126,7 +139,7 @@ rejectMember: async (organizationId, userId) => {
       if (!response.data.success)
         throw new Error(response.data.message)
       set((state) => ({
-        members: state.members.map(m => m.userId === userId ? { ...m, role: 'admin' } : m), 
+        members: state.members.map(m => m.userId === userId ? { ...m, role: 1 } : m), 
         isLoading: false,
         isUpdated: true
       }))
@@ -143,7 +156,7 @@ rejectMember: async (organizationId, userId) => {
       if (!response.data.success)
         throw new Error(response.data.message)
       set((state) => ({
-        members: state.members.map(m => m.userId === userId ? { ...m, role: 'member' } : m), // Adjust based on DTO
+        members: state.members.map(m => m.userId === userId ? { ...m, role: 0 } : m), // Adjust based on DTO
         isLoading: false,
         isUpdated: true
       }))

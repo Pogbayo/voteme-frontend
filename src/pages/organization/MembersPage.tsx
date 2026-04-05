@@ -251,40 +251,42 @@ const MembersPage = () => {
                     <div className='text-[11px] truncate' style={{ color: 'var(--text3)' }}>{m.email}</div>
                   </div>
 
-                  {m.isAdmin && (
-                    <span
-                      className='text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0'
-                      style={{ background: 'var(--info-bg)', color: 'var(--info)' }}
-                    >
-                      Admin
-                    </span>
-                  )}
+                 {/* Show Admin badge only for Admin and Owner roles */}
+{(m.role === 1 || m.role === 2) && (
+  <span className='text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0' 
+    style={{ background: 'var(--info-bg)', color: 'var(--info)' }}
+  >
+    {m.role === 1 ? 'Admin' : 'Owner'}
+  </span>
+)}
 
-                  <div className='flex gap-2 flex-shrink-0'>
-                    {m.isAdmin ? (
-                      <button
-                        onClick={() => demoteFromAdmin(orgId, m.userId)}
-                        className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                        style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+              <div className='flex gap-2 flex-shrink-0'>
+                {/* Show Demote button for Admin role, Promote button for Member role */}
+                  {m.role === 1 ? (
+                    <button onClick={() => demoteFromAdmin(orgId, m.userId)} 
+                      className='text-[11px] px-2.5 py-1.5 rounded-[6px] border' 
+                      style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+                    >
+                      Demote
+                    </button>
+                  ) : m.role === 0 ? (
+                    <button onClick={() => promoteToAdmin(orgId, m.userId)} 
+                      className='text-[11px] px-2.5 py-1.5 rounded-[6px] border' 
+                      style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+                    >
+                      Promote
+                    </button>
+                  ) : null}
+
+                    {/* Show Remove button for all roles except Owner */}
+                    {m.role !== 2 && (
+                      <button onClick={() => removeMember(orgId, m.userId)} 
+                        className='text-[11px] px-2.5 py-1.5 rounded-[6px] border' 
+                        style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}
                       >
-                        Demote
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => promoteToAdmin(orgId, m.userId)}
-                        className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                        style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
-                      >
-                        Promote
+                        Remove
                       </button>
                     )}
-                    <button
-                      onClick={() => removeMember(orgId, m.userId)}
-                      className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                      style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}
-                    >
-                      Remove
-                    </button>
                   </div>
                 </div>
               ))

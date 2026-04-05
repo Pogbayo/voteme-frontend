@@ -11,10 +11,10 @@ export const useAuth = () => {
   const logout = useAuthStore((state) => state.logout)
   const clearError = useAuthStore((state) => state.clearError)
 
-  const hasRole = (role: string) => user?.roles?.includes(role) ?? false
-  const isOrgAdmin = hasRole('OrgAdmin')
-  const isSuperAdmin = hasRole('SuperAdmin')
-  const isVoter = hasRole('Voter')
+  // const hasRole = (role: string) => user?.roles?.includes(role) ?? false
+  // const isOrgAdmin = hasRole('OrgAdmin')
+  // const isSuperAdmin = hasRole('SuperAdmin')
+  // const isVoter = hasRole('Voter')
 
   return {
     user,
@@ -26,9 +26,9 @@ export const useAuth = () => {
     register,
     logout,
     clearError,
-    hasRole,
-    isOrgAdmin,
-    isSuperAdmin,
-    isVoter,
+    // hasRole,
+    // isOrgAdmin,
+    // isSuperAdmin,
+    // isVoter,
   }
 }

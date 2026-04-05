@@ -7,10 +7,12 @@ import { useUIStore } from '../../stores/uiStore'
 import { useThemeStore } from '../../stores/themeStore'
 import { useElectionStore } from '../../stores/electionStore'
 import { useOrganizationMemberStore } from '../../stores/organizationMemberStore'
+import { useOrganizationMember } from '../../hooks/useOrganizationMember'
 
 
 const Sidebar = () => {
-  const { user, isOrgAdmin } = useAuth()
+  const { user } = useAuth()
+  const{ memberShip} = useOrganizationMember()
   const { logout } = useAuthStore()
   const {
     userOrganizations,
@@ -45,6 +47,7 @@ const Sidebar = () => {
     navigate('/dashboard');
   }, 20);
 };
+const allowedRoles = [1, 2];
 
   const navItem = (to: string, label: string, icon: React.ReactNode, dot?: string) => (
     <NavLink
@@ -124,8 +127,12 @@ const Sidebar = () => {
                   {currentOrganization?.name ?? 'Select organization'}
                 </div>
                 <div className='text-[10px]' style={{ color: 'var(--sidebar-muted)' }}>
-                  {isOrgAdmin ? 'OrgAdmin' : 'Voter'}
-                </div>
+                    {memberShip?.role === 0 ? 'Member' : 
+                      memberShip?.role === 1 ? 'Admin' : 
+                      memberShip?.role === 2 ? 'Owner' : 
+                      ''
+                    }
+                     </div>
               </div>
               <svg
                 width='12' height='12' viewBox='0 0 16 16'
@@ -150,8 +157,11 @@ const Sidebar = () => {
                       borderBottom: '0.5px solid var(--border)',
                     }}
                   >
-                    {org.name}
-                  </div>
+                    <>
+                    <p>{org.name}</p>
+              
+                    </>                
+                 </div>
                 ))}
               </div>
             )}
@@ -198,7 +208,7 @@ const Sidebar = () => {
         )}
 
         {/* Admin section */}
-        {isOrgAdmin && (
+        {allowedRoles.includes(memberShip?.role ?? 0) &&(
           <>
             {!collapsed && (
               <div

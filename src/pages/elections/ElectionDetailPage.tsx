@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useElection } from '../../hooks/useElection'
-import { useAuth } from '../../hooks/useAuth'
 import { formatDateTime } from '../../utils/formatDate'
+import { useOrganizationMember } from '../../hooks/useOrganizationMember'
 
 const statusStyle: Record<number, { label: string; bg: string; color: string }> = {
   0: { label: 'Pending', bg: 'var(--warning-bg)', color: 'var(--warning)' },
@@ -13,8 +13,8 @@ const statusStyle: Record<number, { label: string; bg: string; color: string }> 
 const ElectionDetailPage = () => {
   const { electionId } = useParams<{ electionId: string }>()
   const { currentElection, getElection, isLoading } = useElection()
-  const { isOrgAdmin } = useAuth()
   const navigate = useNavigate()
+  const{memberShip} = useOrganizationMember();
 
   useEffect(() => {
     if (electionId) getElection(electionId)
@@ -71,7 +71,7 @@ const ElectionDetailPage = () => {
           <div>
             <div className='text-[11px] mb-0.5' style={{ color: 'var(--text3)' }}>Ends</div>
             <div className='text-[12px]' style={{ color: 'var(--text)' }}>{formatDateTime(currentElection.endDate)}</div>
-            {currentElection.status === 1 && isOrgAdmin && (
+            {currentElection.status === 1 && memberShip?.status === 1 && (
               <div className='text-[10px] mt-1' style={{ color: 'var(--text3)' }}>
                 This is the closing date for the election; after this time voting will stop.
               </div>
@@ -178,7 +178,7 @@ const ElectionDetailPage = () => {
             View results
           </button>
         )}
-        {isOrgAdmin && currentElection.status === 0 && (
+        {memberShip?.status === 1 && currentElection.status === 0 && (
           <button
             onClick={() => navigate(`/admin/elections`)}
             className='px-5 py-2.5 rounded-[8px] text-[13px] font-medium border'

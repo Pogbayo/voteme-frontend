@@ -3,6 +3,7 @@ import type { ApiResponse } from '../types/api.types'
 import type {
   OrganizationDto,
   CreateOrganizationDto,
+  UpdateOrganizationDto,
 } from '../types/organization.types'
 
 class OrganizationApi {
@@ -12,28 +13,17 @@ class OrganizationApi {
   }
 
   create(dto: CreateOrganizationDto) {
-    const formData = new FormData()
-    formData.append('organizationName', dto.organizationName)
-    formData.append('adminFirstName', dto.adminFirstName || '')
-    formData.append('adminLastName', dto.adminLastName || '')
-    formData.append('adminEmail', dto.adminEmail)
-    formData.append('adminPhoneNumber', dto.adminPhoneNumber || '')
-    formData.append('password', dto.password || '')
-    if (dto.description) formData.append('description', dto.description)
-    if (dto.adminDisplayName) formData.append('adminDisplayName', dto.adminDisplayName)
-    if (dto.logoFile) formData.append('logoFile', dto.logoFile)
-
     return axiosInstance.post<ApiResponse<OrganizationDto>>(
       '/auth/register-organization',
-      formData,
+      dto,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
   }
 
-  update(id: string, formData: FormData) {
+  update(id: string,dto: UpdateOrganizationDto) {
     return axiosInstance.patch<ApiResponse<boolean>>(
       `/organization/${id}`,
-      formData,
+      dto,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
   }
@@ -44,6 +34,10 @@ class OrganizationApi {
 
   delete(id: string) {
     return axiosInstance.delete<ApiResponse<boolean>>(`/organization/${id}`)
+  }
+
+  getOrganizationVotesCount(organizationId: string) {
+    return axiosInstance.get<ApiResponse<number>>(`/votes/${organizationId}/total-votes`)
   }
 }
 

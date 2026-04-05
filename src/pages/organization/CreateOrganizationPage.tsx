@@ -8,11 +8,10 @@ import { useAuthStore } from '../../stores/authStore'
 const createOrgSchema = z.object({
   organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
   description: z.string().optional(),
-  adminFirstName: z.string().min(1, 'First name is required').optional(),
-  adminLastName: z.string().min(1, 'Last name is required').optional(),
-  adminDisplayName: z.string().optional(),
-  adminEmail: z.string().email('Please enter a valid email'),
-  adminPhoneNumber: z.string().min(10, 'Phone number is required').optional(),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().min(1, 'Last name is required').optional(),
+  displayName: z.string().optional(),
+  email: z.string().email('Please enter a valid email'),
   logoFile: z.instanceof(File).optional(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional(),
 })
@@ -22,7 +21,7 @@ type CreateOrgFormData = z.infer<typeof createOrgSchema>
 const CreateOrganizationPage = () => {
   const { createOrganization, isLoading } = useOrganizationStore()
   const navigate = useNavigate()
-const { user } = useAuthStore();
+  const { user } = useAuthStore();
   const {
     register,
     handleSubmit,
@@ -31,11 +30,12 @@ const { user } = useAuthStore();
   } = useForm<CreateOrgFormData>({
     resolver: zodResolver(createOrgSchema),
     defaultValues: {
-      adminEmail: user?.email || '',
+      email: user?.email || '',
     },
   })
 
   const onSubmit = async (data: CreateOrgFormData) => {
+    console.log('Form data:', data) // Debug log
     try {
       await createOrganization(data)
       reset()
@@ -71,7 +71,10 @@ const { user } = useAuthStore();
             borderColor: 'var(--border)' 
           }}
         >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+         <form onSubmit={handleSubmit((data) => {
+              console.log('Form data:', data);
+              onSubmit(data);
+            })}>
 
             {/* Organization Name */}
             <div>
@@ -139,7 +142,7 @@ const { user } = useAuthStore();
                 Display Name (optional)
               </label>
               <input
-                {...register('adminDisplayName')}
+                {...register('displayName')}
                 placeholder="John D."
                 className="w-full px-4 py-3 rounded-1xl text-sm focus:outline-none border"
                 style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -213,7 +216,7 @@ const { user } = useAuthStore();
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              // disabled={isLoading}
               className="w-full py-3.5 rounded-1xl text-sm font-semibold text-white mt-4 transition-all disabled:opacity-70"
               style={{ background: 'var(--accent)' }}
             >

@@ -5,9 +5,9 @@ export const Roles = {
 } as const
 
 export const OrgRole = {
-  Member : 'Member',
-  Admin : 'Admin',
-  Owner : 'Owner',
+  Member : 0,
+  Admin : 1,
+  Owner : 2,
 }
 export type Role = typeof Roles[keyof typeof Roles ]
 export type OrgRoleType = typeof OrgRole[keyof typeof OrgRole];

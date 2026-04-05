@@ -12,30 +12,16 @@ export interface OrganizationDto {
 export interface CreateOrganizationDto {
   organizationName: string
   description?: string
-  adminFirstName?: string
-  adminLastName?: string
-  adminDisplayName?: string
-  adminEmail: string
-  adminPhoneNumber?: string
+  firstName?: string
+  lastName?: string
+  displayName?: string
+  email: string
   logoFile?: File
   password?: string 
 }
 
-export interface CreatedOrganizationDto {
-  id: string
-  organizationName: string
-  description: string
-  logoUrl: string
-  uniqueKey: string
-  adminFirstName: string
-  adminLastName: string
-  adminDisplayName: string
-  adminEmail: string
-  createdAt: string
-}
-
 export interface UpdateOrganizationDto {
-  name: string;
+  name?: string;
   description?: string;
   logo?: File; 
 }

@@ -1,4 +1,4 @@
-import type { ElectionCategoryDto, ElectionCategoryResultDto } from './category.types'
+import type { ElectionCategoryDto, ElectionCategoryResultDto } from './electionCategory.types'
 
 export type ElectionStatus = 0 | 1 | 2 // 0=Pending, 1=Active, 2=Closed
 

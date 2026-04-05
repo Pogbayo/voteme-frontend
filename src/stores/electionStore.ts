@@ -26,7 +26,7 @@ interface ElectionState {
   getResults: (id: string) => Promise<void>
 
   // ✅ Internal — called by category store to sync categories
-  syncCategoryAdded: (electionId: string, category: import('../types/category.types').ElectionCategoryDto) => void
+  syncCategoryAdded: (electionId: string, category: import('../types/electionCategory.types').ElectionCategoryDto) => void
   syncCategoryDeleted: (electionId: string, categoryId: string) => void
 
   clearError: () => void
@@ -78,7 +78,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
       const response = await electionApi.create(dto)
       if (!response.data.success || !response.data.data)
         throw new Error(response.data.message)
-      // ✅ Add new election to the list
       set((state) => ({
         elections: [response.data.data!, ...state.elections],
         totalElectionCount: state.totalElectionCount + 1,
@@ -99,7 +98,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
 
       const updated = response.data.data
 
-      // ✅ Update the election in the list and currentElection if it matches
       set((state) => ({
         elections: state.elections.map(e => e.id === id ? updated : e),
         currentElection: state.currentElection?.id === id ? updated : state.currentElection,
@@ -118,7 +116,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
       if (!response.data.success)
         throw new Error(response.data.message)
 
-      // ✅ Remove from list
       set((state) => ({
         elections: state.elections.filter(e => e.id !== id),
         totalElectionCount: state.totalElectionCount - 1,
@@ -140,7 +137,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
 
       const updated = response.data.data
 
-      // ✅ Update election status in list and currentElection
       set((state) => ({
         elections: state.elections.map(e => e.id === id ? updated : e),
         currentElection: state.currentElection?.id === id ? updated : state.currentElection,
@@ -165,7 +161,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
     }
   },
 
-  // ✅ Called by category store after create — adds category to election
   syncCategoryAdded: (electionId, category) => {
     set((state) => ({
       elections: state.elections.map(e =>
@@ -179,7 +174,6 @@ export const useElectionStore = create<ElectionState>((set) => ({
     }))
   },
 
-  // ✅ Called by category store after delete — removes category from election
   syncCategoryDeleted: (electionId, categoryId) => {
     set((state) => ({
       elections: state.elections.map(e =>

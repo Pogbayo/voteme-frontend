@@ -1,5 +1,5 @@
 import type { ApiResponse } from '../types/api.types'
-import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/member.types'
+import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/organizationMember.types'
 import api from './axiosInstance' 
 
 export const organizationMemberApi = {
@@ -18,8 +18,8 @@ export const organizationMemberApi = {
   leave: (organizationId: string) => 
     api.post<ApiResponse<boolean>>(`/organizationmember/${organizationId}/leave`),
 
-        //   getUserOrganizations: () => 
-        //     api.get('/organizationmember/user'),
+  getMemberShip : (organizationId:string, userId:string) =>
+    api.get<ApiResponse<OrganizationMemberDto>>(`/organizationmember/${organizationId}/membership/${userId}`),
 
   approve: (organizationId: string, userId: string) => 
     api.put<ApiResponse<boolean>>(`/organizationmember/${organizationId}/members/${userId}/approve`),

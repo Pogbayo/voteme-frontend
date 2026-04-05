@@ -2,12 +2,12 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOrganization } from '../../hooks/useOrganization'
 import { useElection } from '../../hooks/useElection'
-import { useAuth } from '../../hooks/useAuth'
+import { useOrganizationMember } from '../../hooks/useOrganizationMember'
 
 const OrganizationPage = () => {
   const { currentOrganization } = useOrganization()
   const { elections, getOrganizationElections } = useElection()
-  const { isOrgAdmin } = useAuth()
+  const { memberShip } = useOrganizationMember()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -69,7 +69,7 @@ const OrganizationPage = () => {
         <div className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className='text-[13px] font-medium mb-4' style={{ color: 'var(--text)' }}>Quick actions</div>
           <div className='flex flex-col gap-2'>
-            {isOrgAdmin && (
+            {memberShip?.role === 1 && (
               <button
                 onClick={() => navigate('/admin/elections')}
                 className='flex items-center gap-2 px-3 py-2.5 rounded-[8px] text-[13px] border w-full text-left'
@@ -78,7 +78,7 @@ const OrganizationPage = () => {
                 + Create new election
               </button>
             )}
-            {isOrgAdmin && (
+            {memberShip?.role === 1 && (
               <button
                 onClick={() => navigate('/organization/members')}
                 className='flex items-center gap-2 px-3 py-2.5 rounded-[8px] text-[13px] border w-full text-left'

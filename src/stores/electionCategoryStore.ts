@@ -6,7 +6,7 @@ import type {
   ElectionCategoryDto,
   ElectionCategoryResultDto,
   UpdateElectionCategoryDto,
-} from '../types/category.types'
+} from '../types/electionCategory.types'
 
 interface ElectionCategoryState {
   loading: boolean

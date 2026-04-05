@@ -1,12 +1,14 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useOrganizationMember } from '../../hooks/useOrganizationMember'
 
 interface ProtectedRouteProps {
-  requiredRole?: string
+  requiredRoles?: number[]
 }
 
-const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, hasRole } = useAuth()
+const ProtectedRoute = ({ requiredRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated } = useAuth()
+  const { memberShip } = useOrganizationMember()
 
   // Not logged in → redirect to login
   if (!isAuthenticated) {
@@ -14,7 +16,7 @@ const ProtectedRoute = ({ requiredRole }: ProtectedRouteProps) => {
   }
 
   // Logged in but wrong role → redirect to dashboard
-  if (requiredRole && !hasRole(requiredRole)) {
+  if (requiredRoles && !requiredRoles.includes(memberShip?.role ?? 0)) {
     return <Navigate to='/dashboard' replace />
   }
 
