@@ -15,10 +15,13 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+const getElectionCategoryCount = (categoryCount?: number, categories?: { length: number }) =>
+  categoryCount ?? categories?.length ?? 0
+
 const statusStyle: Record<number, { label: string; bg: string; color: string }> = {
   0: { label: 'Pending', bg: 'var(--warning-bg)', color: 'var(--warning)' },
   1: { label: 'Active', bg: 'var(--success-bg)', color: 'var(--success)' },
-  2: { label: 'Closed', bg: 'var(--surface2)', color: 'var(--text3)' },
+  2: { label: 'Closed', bg: 'var(--info-bg)', color: 'var(--info)' },
 }
 
 const ManageElectionsPage = () => {
@@ -38,6 +41,7 @@ const ManageElectionsPage = () => {
   const [showForm, setShowForm] = useState(false)
   const [openingId, setOpeningId] = useState<string | null>(null)
   const [endDate, setEndDate] = useState('')
+  const [openError, setOpenError] = useState<string | null>(null)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -45,17 +49,14 @@ const ManageElectionsPage = () => {
   })
 
   useEffect(() => {
-    if (currentOrganization?.id) getOrganizationElections(currentOrganization.id)
-  }, [currentOrganization?.id])
+    if (currentOrganization?.id) {
+      getOrganizationElections(currentOrganization.id).catch(() => {})
+    }
+  }, [currentOrganization?.id, getOrganizationElections])
 
   const onSubmit = async (data: FormData) => {
-    console.log('Current org:', currentOrganization)
     if (!currentOrganization?.id) return
     try {
-      console.log('Submitting election:', {
-      ...data,
-      organizationId: currentOrganization?.id,
-    })
       await createElection({
         ...data,
         isPrivate: data.isPrivate ?? false,
@@ -63,214 +64,174 @@ const ManageElectionsPage = () => {
       })
       reset()
       setShowForm(false)
-    } catch (err) {
-      console.error(err) // error is already stored in the store
-    }
+    } catch {}
   }
 
-const handleOpen = async (electionId: string) => {
-  if (!endDate) {
-    alert("Please select an end date");
-    return;
-  }
-
-  try {
-    // Fetch full election details (this should include categories)
-    const response = await getElection(electionId);
-    const election = response; // getElection now returns the election data
-    if (!election || !election.categories || election.categories.length === 0) {
-      alert("This election has no categories yet.\n\nPlease add at least one category before opening the election.");
-      return;
+  const handleOpen = async (electionId: string) => {
+    if (!endDate) {
+      setOpenError('Please select an end date before opening this election.')
+      return
     }
 
-    // Proceed to open the election
-    await openElection(electionId, { endDate: convertLocalToUTC(endDate) });
+    try {
+      setOpenError(null)
+      const election = await getElection(electionId)
+      if (!election?.categories?.length) {
+        setOpenError('This election has no categories yet. Add at least one category before opening it.')
+        return
+      }
 
-    setOpeningId(null);
-    setEndDate('');
+      await openElection(electionId, { endDate: convertLocalToUTC(endDate) })
+      setOpeningId(null)
+      setEndDate('')
+      setOpenError(null)
 
-    // Refresh the list
-    if (currentOrganization?.id) {
-      await getOrganizationElections(currentOrganization.id);
+      if (currentOrganization?.id) {
+        await getOrganizationElections(currentOrganization.id)
+      }
+    } catch (err: any) {
+      setOpenError(err.response?.data?.message || 'Failed to open election')
     }
-  } catch (err: any) {
-    const message = err.response?.data?.message || "Failed to open election";
-    alert(message);
   }
-};
 
   return (
-    <div className='flex flex-col gap-5'>
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-[20px] font-medium' style={{ color: 'var(--text)' }}>Manage elections</h1>
-          <p className='text-[13px] mt-0.5' style={{ color: 'var(--text2)' }}>{currentOrganization?.name}</p>
+    <div className='flex flex-col gap-5 md:gap-6'>
+      <section className='rounded-[26px] border p-5 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <div className='flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between'>
+          <div>
+            <div className='text-[11px] font-semibold uppercase tracking-[0.16em]' style={{ color: 'var(--info)' }}>
+              Admin workspace
+            </div>
+            <h1 className='mt-3 text-[28px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+              Manage elections
+            </h1>
+            <p className='mt-2 text-[14px] leading-6' style={{ color: 'var(--text2)' }}>
+              Create new elections, open them when categories are ready, and keep administration inside the same blue system.
+            </p>
+          </div>
+          <button
+            onClick={() => { setShowForm(!showForm); clearError() }}
+            className='rounded-[18px] px-5 py-3 text-[13px] font-semibold text-white'
+            style={{ background: 'var(--accent)' }}
+          >
+            {showForm ? 'Close form' : 'Create election'}
+          </button>
         </div>
-        <button
-          onClick={() => { setShowForm(!showForm); clearError() }}
-          className='px-4 py-2 rounded-[8px] text-[13px] font-medium text-white'
-          style={{ background: 'var(--accent)' }}
-        >
-          {showForm ? 'Cancel' : '+ Create election'}
-        </button>
-      </div>
+      </section>
 
-      {/* Create form */}
       {showForm && (
-        <div className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <h2 className='text-[14px] font-medium mb-4' style={{ color: 'var(--text)' }}>New election</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-3'>
-            <div className='flex flex-col gap-1'>
-              <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Election name</label>
-              <input
-                {...register('name')}
-                placeholder='e.g. Student Union Election 2026'
-                className='px-3 py-2 rounded-[8px] text-[13px] outline-none border'
-                style={{ background: 'var(--surface2)', borderColor: errors.name ? 'var(--danger)' : 'var(--border)', color: 'var(--text)' }}
-              />
-              {errors.name && <span className='text-[11px]' style={{ color: 'var(--danger)' }}>{errors.name.message}</span>}
+        <section className='rounded-[26px] border p-5 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <h2 className='text-[20px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+            New election
+          </h2>
+          <form onSubmit={handleSubmit(onSubmit)} className='mt-5 grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <div className='md:col-span-2'>
+              <label className='block text-[12px] font-semibold uppercase tracking-[0.12em] mb-2' style={{ color: 'var(--text3)' }}>
+                Election name
+              </label>
+              <input {...register('name')} className='w-full rounded-[18px] border px-4 py-3.5 text-[14px] outline-none' style={{ background: 'var(--surface2)', borderColor: errors.name ? 'var(--danger)' : 'var(--border)', color: 'var(--text)' }} />
+              {errors.name && <p className='mt-2 text-[12px]' style={{ color: 'var(--danger)' }}>{errors.name.message}</p>}
             </div>
-
-            <div className='flex flex-col gap-1'>
-              <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Description (optional)</label>
-              <textarea
-                {...register('description')}
-                placeholder='Brief description of this election'
-                rows={2}
-                className='px-3 py-2 rounded-[8px] text-[13px] outline-none border resize-none'
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
+            <div className='md:col-span-2'>
+              <label className='block text-[12px] font-semibold uppercase tracking-[0.12em] mb-2' style={{ color: 'var(--text3)' }}>
+                Description
+              </label>
+              <textarea {...register('description')} rows={3} className='w-full rounded-[18px] border px-4 py-3.5 text-[14px] outline-none resize-none' style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }} />
             </div>
-
-            <label className='flex items-center gap-2 cursor-pointer'>
+            <label className='inline-flex items-center gap-2 text-[14px]' style={{ color: 'var(--text2)' }}>
               <input {...register('isPrivate')} type='checkbox' />
-              <span className='text-[13px]' style={{ color: 'var(--text2)' }}>Private election</span>
+              Private election
             </label>
-
-            {/* Backend error */}
-            {error && <div className='text-[12px]' style={{ color: 'var(--danger)' }}>{error}</div>}
-
-            <button
-              type='submit'
-              disabled={isLoading}
-              className='px-4 py-2 rounded-[8px] text-[13px] font-medium text-white w-fit disabled:opacity-50'
-              style={{ background: 'var(--accent)' }}
-            >
-              {isLoading ? 'Creating...' : 'Create election'}
-            </button>
+            <div className='md:col-span-2 flex items-center justify-between gap-3 flex-wrap'>
+              {error && <div className='text-[12px]' style={{ color: 'var(--danger)' }}>{error}</div>}
+              <button type='submit' disabled={isLoading} className='rounded-[18px] px-5 py-3 text-[13px] font-semibold text-white disabled:opacity-60' style={{ background: 'var(--accent)' }}>
+                {isLoading ? 'Creating...' : 'Create election'}
+              </button>
+            </div>
           </form>
-        </div>
+        </section>
       )}
 
-      {/* Elections list */}
-      <div className='rounded-[12px] border overflow-hidden' style={{ borderColor: 'var(--border)' }}>
-        {elections.map((e, i) => {
-          const s = statusStyle[e.status]
-          const isOpening = openingId === e.id
-          return (
-            <div
-              key={e.id}
-              className='p-4 flex flex-col md:flex-row md:items-center gap-3'
-              style={{
-                background: 'var(--surface)',
-                borderBottom: i < elections.length - 1 ? '0.5px solid var(--border)' : 'none',
-              }}
-            >
-              {/* Status Icon */}
-              <div
-                className='w-[34px] h-[34px] rounded-[8px] flex items-center justify-center flex-shrink-0'
-                style={{ background: s.bg }}
-              >
-                <svg width='16' height='16' viewBox='0 0 16 16' fill={s.color}>
-                  <path d='M8 1L2 5v6l6 4 6-4V5z'/>
-                </svg>
-              </div>
+      <section className='rounded-[26px] border p-4 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <div className='grid gap-4'>
+          {elections.map((election) => {
+            const tone = statusStyle[election.status]
+            const isOpening = openingId === election.id
 
-              {/* Election Info */}
-              <div className='flex-1 min-w-0'>
-                <div className='text-[13px] font-medium' style={{ color: 'var(--text)' }}>{e.name}</div>
-                <div className='text-[11px] mt-0.5' style={{ color: 'var(--text3)' }}>
-                  {e.categories.length} categories · Created {formatDate(e.createdAt)}
-                </div>
+            return (
+              <article key={election.id} className='rounded-[22px] border p-4 md:p-5' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-3 flex-wrap'>
+                      <div className='text-[16px] font-semibold' style={{ color: 'var(--text)' }}>{election.name}</div>
+                      <span className='rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]' style={{ background: tone.bg, color: tone.color }}>
+                        {tone.label}
+                      </span>
+                    </div>
+                    <div className='mt-2 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>
+                      {getElectionCategoryCount(election.categoryCount, election.categories)} categories. Created {formatDate(election.createdAt)}.
+                    </div>
 
-                {isOpening && (
-                  <div className='flex flex-col gap-2 mt-3'>
-                    <div className='flex items-center gap-2'>
-                      <input
-                        type='datetime-local'
-                        value={endDate}
-                        onChange={ev => setEndDate(ev.target.value)}
-                        className='px-2 py-1.5 rounded-[6px] text-[12px] border outline-none'
-                        style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                      />
-                      <button
-                        onClick={() => handleOpen(e.id)}
-                        disabled={!endDate}
-                        className='px-3 py-1.5 rounded-[6px] text-[12px] font-medium text-white disabled:opacity-50'
-                        style={{ background: 'var(--accent)' }}
-                      >
-                        Confirm open
-                      </button>
-                      <button
-                        onClick={() => setOpeningId(null)}
-                        className='text-[12px]'
-                        style={{ color: 'var(--text3)' }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                    <div className='text-[11px] text-left' style={{ color: 'var(--text3)' }}>
-                      Set the closing date/time here. Voting becomes unavailable after this moment.
-                    </div>
+                    {isOpening && (
+                      <div className='mt-4 flex flex-col gap-3 md:flex-row md:items-center'>
+                        <div className='flex-1 min-w-[240px]'>
+                          <label className='block text-[11px] font-semibold uppercase tracking-[0.12em] mb-2' style={{ color: 'var(--text3)' }}>
+                            Election end date
+                          </label>
+                          <input
+                            type='datetime-local'
+                            value={endDate}
+                            onChange={(ev) => setEndDate(ev.target.value)}
+                            className='w-full rounded-[16px] border px-4 py-3 text-[13px] outline-none open-election-datetime'
+                            style={{ background: 'var(--surface)', borderColor: 'var(--accent)', color: 'var(--text)', colorScheme: 'light' }}
+                          />
+                          <p className='mt-2 text-[12px] leading-5' style={{ color: 'var(--text2)' }}>
+                            This date is when the election will end and voting will automatically close.
+                          </p>
+                          {openError && (
+                            <div className='mt-2 rounded-[14px] px-3 py-2 text-[12px]' style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
+                              {openError}
+                            </div>
+                          )}
+                        </div>
+                        <div className='flex flex-wrap items-center gap-3'>
+                          <button onClick={() => handleOpen(election.id)} disabled={!endDate} className='rounded-[16px] px-4 py-3 text-[13px] font-semibold text-white disabled:opacity-50' style={{ background: 'var(--accent)' }}>
+                            Confirm open
+                          </button>
+                          <button onClick={() => { setOpeningId(null); setOpenError(null); }} className='text-[13px] font-medium' style={{ color: 'var(--text2)' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Actions */}
-              <div className='flex items-center gap-2 flex-shrink-0'>
-                <span className='text-[10px] font-medium px-2 py-1 rounded-full' style={{ background: s.bg, color: s.color }}>
-                  {s.label}
-                </span>
-                <button
-                  onClick={() => navigate(`/admin/elections/${e.id}/categories`)}
-                  className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                  style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
-                >
-                  Categories
-                </button>
-                {e.status === 0 && (
-                  <button
-                    onClick={() => setOpeningId(e.id)}
-                    className='text-[11px] px-2.5 py-1.5 rounded-[6px] text-white'
-                    style={{ background: 'var(--accent)' }}
-                  >
-                    Open
-                  </button>
-                )}
-                {e.status === 2 && (
-                  <button
-                    onClick={() => navigate(`/elections/${e.id}/results`)}
-                    className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                    style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
-                  >
-                    Results
-                  </button>
-                )}
-                {e.status !== 1 && (
-                  <button
-                    onClick={() => deleteElection(e.id)}
-                    className='text-[11px] px-2.5 py-1.5 rounded-[6px] border'
-                    style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <button onClick={() => navigate(`/admin/elections/${election.id}/categories`)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
+                      Categories
+                    </button>
+                    {election.status === 0 && (
+                      <button onClick={() => { setOpeningId(election.id); setOpenError(null); }} className='rounded-[14px] px-3 py-2 text-[12px] font-semibold text-white' style={{ background: 'var(--accent)' }}>
+                        Open
+                      </button>
+                    )}
+                    {election.status === 2 && (
+                      <button onClick={() => navigate(`/elections/${election.id}/results`)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
+                        Results
+                      </button>
+                    )}
+                    {election.status !== 1 && (
+                      <button onClick={() => deleteElection(election.id)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 }

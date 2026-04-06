@@ -6,12 +6,11 @@ import { useOrganizationStore } from '../../stores/organizationStore'
 const createOrgSchema = z.object({
   organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
   description: z.string().optional(),
-  adminFirstName: z.string().min(1, 'First name is required'),
-  adminLastName: z.string().min(1, 'Last name is required'),
-  adminDisplayName: z.string().optional(),
-  adminEmail: z.string().email('Please enter a valid email'),
-  adminPhoneNumber: z.string().min(10, 'Phone number is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().min(1, 'Last name is required').optional(),
+  displayName: z.string().optional(),
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
 })
 
 type CreateOrgFormData = z.infer<typeof createOrgSchema>
@@ -32,11 +31,10 @@ const CreateOrganizationModal = ({ onClose }: CreateOrganizationModalProps) => {
       await createOrganization({
         organizationName: data.organizationName,
         description: data.description,
-        adminFirstName: data.adminFirstName,
-        adminLastName: data.adminLastName,
-        adminDisplayName: data.adminDisplayName,
-        adminEmail: data.adminEmail,
-        adminPhoneNumber: data.adminPhoneNumber,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        displayName: data.displayName,
+        email: data.email,
         password: data.password,
       })
 
@@ -89,27 +87,22 @@ const CreateOrganizationModal = ({ onClose }: CreateOrganizationModalProps) => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[12px] font-medium block mb-1" style={{ color: 'var(--text2)' }}>First Name</label>
-              <input {...register('adminFirstName')} placeholder="John" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
+              <input {...register('firstName')} placeholder="John" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
             </div>
             <div>
               <label className="text-[12px] font-medium block mb-1" style={{ color: 'var(--text2)' }}>Last Name</label>
-              <input {...register('adminLastName')} placeholder="Doe" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
+              <input {...register('lastName')} placeholder="Doe" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
             </div>
           </div>
 
           <div>
             <label className="text-[12px] font-medium block mb-1" style={{ color: 'var(--text2)' }}>Display Name (optional)</label>
-            <input {...register('adminDisplayName')} placeholder="John D." className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
+            <input {...register('displayName')} placeholder="John D." className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
           </div>
 
           <div>
             <label className="text-[12px] font-medium block mb-1" style={{ color: 'var(--text2)' }}>Email Address</label>
-            <input {...register('adminEmail')} type="email" placeholder="admin@company.com" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
-          </div>
-
-          <div>
-            <label className="text-[12px] font-medium block mb-1" style={{ color: 'var(--text2)' }}>Phone Number</label>
-            <input {...register('adminPhoneNumber')} placeholder="+234 801 234 5678" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
+            <input {...register('email')} type="email" placeholder="admin@company.com" className="w-full px-4 py-3 rounded-[10px] text-[14px]" style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }} />
           </div>
 
           <div>

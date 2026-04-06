@@ -8,6 +8,10 @@ import type {
 } from '../types/election.types'
 import { electionApi } from '../api/electionApi'
 
+const ELECTION_REQUEST_DEDUPE_MS = 2000
+let lastElectionRequestKey = ''
+let lastElectionRequestAt = 0
+
 interface ElectionState {
   elections: ElectionDto[]
   currentElection: ElectionDto | null
@@ -56,6 +60,18 @@ export const useElectionStore = create<ElectionState>((set) => ({
   },
 
   getOrganizationElections: async (organizationId, page, pageSize) => {
+    const requestKey = `${organizationId}:${page ?? 1}:${pageSize ?? 20}`
+    const now = Date.now()
+
+    if (
+      requestKey === lastElectionRequestKey &&
+      now - lastElectionRequestAt < ELECTION_REQUEST_DEDUPE_MS
+    ) {
+      return
+    }
+
+    lastElectionRequestKey = requestKey
+    lastElectionRequestAt = now
     set({ isLoading: true, error: null })
     try {
       const response = await electionApi.getOrganizationElections(organizationId, page, pageSize)

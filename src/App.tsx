@@ -4,14 +4,17 @@ import { useOrganizationStore } from './stores/organizationStore'
 import { useAuthStore } from './stores/authStore'
 
 const App = () => {
-  const hydrateOrganization = useOrganizationStore((s) => s.hydrateOrganization)
+  const getUserOrganizations = useOrganizationStore((s) => s.getUserOrganizations)
+  const resetOrganizationSession = useOrganizationStore((s) => s.resetOrganizationSession)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   useEffect(() => {
     if (isAuthenticated) {
-      hydrateOrganization()
+      getUserOrganizations().catch(() => {})
+    } else {
+      resetOrganizationSession()
     }
-  }, [isAuthenticated])
+  }, [getUserOrganizations, isAuthenticated, resetOrganizationSession])
 
   return <AppRouter />
 }

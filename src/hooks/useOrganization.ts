@@ -12,6 +12,7 @@ export const useOrganization = () => {
   const updateOrganization = useOrganizationStore((state) => state.updateOrganization)
   const deleteOrganization = useOrganizationStore((state) => state.deleteOrganization)
   const setCurrentOrganization = useOrganizationStore((state) => state.setCurrentOrganization)
+  const resetOrganizationSession = useOrganizationStore((state) => state.resetOrganizationSession)
   const clearError = useOrganizationStore((state) => state.clearError)
   const totalVotes = useOrganizationStore((state) => state.totalVotes)
   const getOrganizationVotesCount = useOrganizationStore((state) => state.getOrganizationVotesCount)
@@ -29,6 +30,7 @@ export const useOrganization = () => {
     updateOrganization,
     deleteOrganization,
     setCurrentOrganization,
+    resetOrganizationSession,
     clearError,
   }
 }

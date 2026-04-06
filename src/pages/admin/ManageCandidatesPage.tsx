@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useCandidate } from '../../hooks/useCandidate'
-import { useElectionCategory } from '../../hooks/useElectionCategory'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useCandidate } from '../../hooks/useCandidate'
+import { useElectionCategory } from '../../hooks/useElectionCategory'
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -14,6 +14,9 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+
+const colors = ['#2f86ff', '#4c98ff', '#6aa9ff', '#3d8eff', '#5ea2ff', '#7bb4ff']
+const inputClass = 'w-full rounded-[16px] border px-4 py-3 text-[14px] outline-none transition'
 
 const ManageCandidatesPage = () => {
   const { electionId, categoryId } = useParams<{ electionId: string; categoryId: string }>()
@@ -29,10 +32,10 @@ const ManageCandidatesPage = () => {
 
   useEffect(() => {
     if (categoryId) {
-      getCategoryCandidates(categoryId)
-      getElectionCategory(categoryId)
+      getCategoryCandidates(categoryId).catch(() => {})
+      getElectionCategory(categoryId).catch(() => {})
     }
-  }, [categoryId])
+  }, [categoryId, getCategoryCandidates, getElectionCategory])
 
   const onSubmit = async (data: FormData) => {
     if (!categoryId) return
@@ -47,142 +50,219 @@ const ManageCandidatesPage = () => {
       setShowForm(false)
       clearError()
     } catch {
-      // error is kept in store.error for display
+      // store manages error state
     }
   }
 
-  const colors = ['#7c3aed', '#0891b2', '#059669', '#e8571a', '#b45309', '#1d4ed8']
-
   return (
-    <div className='flex flex-col gap-5'>
-      <div className='flex items-center justify-between'>
-        <div>
-          <button
-            onClick={() => navigate(`/admin/elections/${electionId}/categories`)}
-            className='flex items-center gap-1.5 text-[13px] mb-1'
-            style={{ color: 'var(--text2)' }}
-          >
-            <svg width='14' height='14' viewBox='0 0 16 16' fill='currentColor'><path d='M10 3L6 8l4 5'/></svg>
-            Back to categories
-          </button>
-          <h1 className='text-[20px] font-medium' style={{ color: 'var(--text)' }}>Candidates</h1>
-          <p className='text-[13px] mt-0.5' style={{ color: 'var(--text2)' }}>{category?.name}</p>
-        </div>
+    <div className='space-y-6'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className='px-4 py-2 rounded-[8px] text-[13px] font-medium text-white'
-          style={{ background: 'var(--accent)' }}
+          type='button'
+          onClick={() => navigate(`/admin/elections/${electionId}/categories`)}
+          className='inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-medium'
+          style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text2)' }}
         >
-          {showForm ? 'Cancel' : '+ Add candidate'}
+          <svg width='14' height='14' viewBox='0 0 16 16' fill='currentColor'>
+            <path d='M10 3L6 8l4 5' />
+          </svg>
+          Back to categories
+        </button>
+
+        <button
+          type='button'
+          onClick={() => setShowForm(current => !current)}
+          className='rounded-[18px] px-4 py-3 text-[13px] font-semibold text-white'
+          style={{ background: 'var(--accent)', boxShadow: '0 16px 32px rgba(47,134,255,0.18)' }}
+        >
+          {showForm ? 'Close form' : 'Add candidate'}
         </button>
       </div>
 
+      <section
+        className='overflow-hidden rounded-[32px] border p-6 shadow-[0_28px_80px_rgba(16,42,67,0.1)] sm:p-8'
+        style={{
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
+        }}
+      >
+        <div className='grid gap-8 xl:grid-cols-[1.08fr_0.92fr]'>
+          <div className='space-y-5'>
+            <div className='inline-flex rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.22em]' style={{ borderColor: 'var(--border)', background: 'var(--surface2)', color: 'var(--accent)' }}>
+              Candidate workspace
+            </div>
+            <div>
+              <h1 className='text-[30px] font-semibold leading-[1.05] sm:text-[38px]' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+                Manage candidates
+              </h1>
+              <p className='mt-3 max-w-[700px] text-[15px] leading-7' style={{ color: 'var(--text2)' }}>
+                Add the people running for <span className='font-semibold' style={{ color: 'var(--text)' }}>{category?.name ?? 'this category'}</span> and keep the ballot clear for voters.
+              </p>
+            </div>
+            <div className='grid gap-3 sm:grid-cols-3'>
+              {[
+                ['Category', category?.name ?? 'Loading'],
+                ['Candidates', `${candidates.length}`],
+                ['Action', showForm ? 'Form open' : 'Review mode'],
+              ].map(([label, value]) => (
+                <div key={label} className='rounded-[20px] border px-4 py-4' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                  <div className='text-[11px] uppercase tracking-[0.16em]' style={{ color: 'var(--text3)' }}>{label}</div>
+                  <div className='mt-2 text-[15px] font-semibold' style={{ color: 'var(--text)' }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className='rounded-[26px] border p-5' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+            <div className='mb-4 text-[13px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>Setup guidance</div>
+            <div className='space-y-3'>
+              {[
+                'Keep display names short so ballots stay readable on smaller screens.',
+                'Use photos only when they add clarity, not clutter.',
+                'Candidate bios should be concise enough to scan quickly before voting.',
+              ].map(item => (
+                <div key={item} className='rounded-[18px] px-4 py-3 text-[13px] leading-6' style={{ background: 'var(--surface)', color: 'var(--text2)' }}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {error && (
-        <div className='rounded-[8px] p-3 border mb-3' style={{ background: 'rgba(220, 38, 38, 0.1)', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+        <div className='rounded-[20px] border px-4 py-3 text-[13px]' style={{ background: 'var(--danger-bg)', borderColor: 'rgba(220,38,38,0.16)', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
 
-      {showForm && (
-        <div className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <h2 className='text-[14px] font-medium mb-4' style={{ color: 'var(--text)' }}>New candidate</h2>
-          <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-3'>
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='flex flex-col gap-1'>
-                <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>First name</label>
-                <input
-                  {...register('firstName')}
-                  placeholder='John'
-                  className='px-3 py-2 rounded-[8px] text-[13px] outline-none border'
-                  style={{ background: 'var(--surface2)', borderColor: errors.firstName ? 'var(--danger)' : 'var(--border)', color: 'var(--text)' }}
-                />
-              </div>
-              <div className='flex flex-col gap-1'>
-                <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Last name</label>
-                <input
-                  {...register('lastName')}
-                  placeholder='Adeyemi'
-                  className='px-3 py-2 rounded-[8px] text-[13px] outline-none border'
-                  style={{ background: 'var(--surface2)', borderColor: errors.lastName ? 'var(--danger)' : 'var(--border)', color: 'var(--text)' }}
-                />
-              </div>
-            </div>
-            <div className='flex flex-col gap-1'>
-              <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Display name (optional)</label>
-              <input
-                {...register('displayName')}
-                placeholder='Johnny A.'
-                className='px-3 py-2 rounded-[8px] text-[13px] outline-none border'
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
-            <div className='flex flex-col gap-1'>
-              <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Bio (optional)</label>
-              <textarea
-                {...register('bio')}
-                placeholder='Brief candidate bio'
-                rows={2}
-                className='px-3 py-2 rounded-[8px] text-[13px] outline-none border resize-none'
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div>
-            <div className='flex flex-col gap-1'>
-              <label className='text-[12px] font-medium' style={{ color: 'var(--text2)' }}>Photo (optional)</label>
-              <input
-                type='file'
-                accept='image/*'
-                onChange={e => setPhotoFile(e.target.files?.[0] ?? null)}
-                className='text-[12px]'
-                style={{ color: 'var(--text2)' }}
-              />
-            </div>
-            <button
-              type='submit'
-              disabled={isLoading}
-              className='px-4 py-2 rounded-[8px] text-[13px] font-medium text-white w-fit disabled:opacity-50'
-              style={{ background: 'var(--accent)' }}
-            >
-              {isLoading ? 'Adding...' : 'Add candidate'}
-            </button>
-          </form>
-        </div>
-      )}
+      <section className='grid gap-6 xl:grid-cols-[0.94fr_1.06fr]'>
+        {showForm && (
+          <div className='rounded-[28px] border p-5 sm:p-6 shadow-[0_22px_60px_rgba(16,42,67,0.08)]' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <h2 className='text-[22px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Add a candidate</h2>
+            <p className='mt-2 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>
+              Complete the candidate profile voters will see in the election flow.
+            </p>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
-        {candidates.map((c, i) => (
-          <div key={c.id} className='rounded-[12px] p-4 border flex items-start gap-3' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-            {c.photoUrl ? (
-              <img src={c.photoUrl} alt='' className='w-[40px] h-[40px] rounded-full object-cover flex-shrink-0' />
-            ) : (
-              <div
-                className='w-[40px] h-[40px] rounded-full flex items-center justify-center text-[13px] font-medium text-white flex-shrink-0'
-                style={{ background: colors[i % colors.length] }}
-              >
-                {c.firstName[0]}{c.lastName[0]}
+            <form onSubmit={handleSubmit(onSubmit)} className='mt-5 space-y-4'>
+              <div className='grid gap-4 md:grid-cols-2'>
+                <label className='space-y-2'>
+                  <span className='text-[12px] font-semibold uppercase tracking-[0.12em]' style={{ color: 'var(--text3)' }}>First name</span>
+                  <input
+                    {...register('firstName')}
+                    placeholder='John'
+                    className={inputClass}
+                    style={{ background: 'var(--surface2)', borderColor: errors.firstName ? 'rgba(220,38,38,0.28)' : 'var(--border)', color: 'var(--text)' }}
+                  />
+                  {errors.firstName && <p className='text-[11px]' style={{ color: 'var(--danger)' }}>{errors.firstName.message}</p>}
+                </label>
+
+                <label className='space-y-2'>
+                  <span className='text-[12px] font-semibold uppercase tracking-[0.12em]' style={{ color: 'var(--text3)' }}>Last name</span>
+                  <input
+                    {...register('lastName')}
+                    placeholder='Adeyemi'
+                    className={inputClass}
+                    style={{ background: 'var(--surface2)', borderColor: errors.lastName ? 'rgba(220,38,38,0.28)' : 'var(--border)', color: 'var(--text)' }}
+                  />
+                  {errors.lastName && <p className='text-[11px]' style={{ color: 'var(--danger)' }}>{errors.lastName.message}</p>}
+                </label>
               </div>
-            )}
-            <div className='flex-1 min-w-0'>
-              <div className='text-[13px] font-medium' style={{ color: 'var(--text)' }}>
-                {c.displayName || `${c.firstName} ${c.lastName}`}
-              </div>
-              {c.bio && <div className='text-[11px] mt-0.5 line-clamp-2' style={{ color: 'var(--text3)' }}>{c.bio}</div>}
+
+              <label className='space-y-2'>
+                <span className='text-[12px] font-semibold uppercase tracking-[0.12em]' style={{ color: 'var(--text3)' }}>Display name</span>
+                <input
+                  {...register('displayName')}
+                  placeholder='Short ballot name'
+                  className={inputClass}
+                  style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                />
+              </label>
+
+              <label className='space-y-2'>
+                <span className='text-[12px] font-semibold uppercase tracking-[0.12em]' style={{ color: 'var(--text3)' }}>Bio</span>
+                <textarea
+                  {...register('bio')}
+                  rows={4}
+                  placeholder='Short biography or manifesto summary'
+                  className={`${inputClass} resize-none`}
+                  style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                />
+              </label>
+
+              <label className='space-y-2'>
+                <span className='text-[12px] font-semibold uppercase tracking-[0.12em]' style={{ color: 'var(--text3)' }}>Photo</span>
+                <input
+                  type='file'
+                  accept='image/*'
+                  onChange={event => setPhotoFile(event.target.files?.[0] ?? null)}
+                  className='block w-full text-[13px]'
+                  style={{ color: 'var(--text2)' }}
+                />
+              </label>
+
               <button
-                onClick={() => deleteCandidate(c.id)}
-                className='text-[11px] mt-2'
-                style={{ color: 'var(--danger)' }}
+                type='submit'
+                disabled={isLoading}
+                className='rounded-[18px] px-5 py-3 text-[14px] font-semibold text-white disabled:opacity-60'
+                style={{ background: 'var(--accent)', boxShadow: '0 16px 32px rgba(47,134,255,0.18)' }}
               >
-                Remove
+                {isLoading ? 'Adding candidate...' : 'Add candidate'}
               </button>
-            </div>
-          </div>
-        ))}
-
-        {candidates.length === 0 && !isLoading && (
-          <div className='col-span-3 text-center py-10'>
-            <div className='text-[13px]' style={{ color: 'var(--text3)' }}>No candidates yet — add one above</div>
+            </form>
           </div>
         )}
-      </div>
+
+        <div className='rounded-[28px] border p-5 sm:p-6 shadow-[0_22px_60px_rgba(16,42,67,0.08)]' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className='mb-5'>
+            <h2 className='text-[22px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Candidate roster</h2>
+            <p className='mt-2 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>
+              Review the ballot lineup and remove anyone who should no longer appear in this category.
+            </p>
+          </div>
+
+          {candidates.length === 0 && !isLoading ? (
+            <div className='rounded-[22px] border px-5 py-10 text-center' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+              <div className='text-[16px] font-semibold' style={{ color: 'var(--text)' }}>No candidates yet</div>
+              <div className='mt-2 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>Add the first candidate to complete this ballot category.</div>
+            </div>
+          ) : (
+            <div className='grid gap-4 md:grid-cols-2'>
+              {candidates.map((candidate, index) => (
+                <article key={candidate.id} className='rounded-[22px] border p-4' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                  <div className='flex items-start gap-3'>
+                    {candidate.photoUrl ? (
+                      <img src={candidate.photoUrl} alt='' className='h-14 w-14 rounded-full object-cover' />
+                    ) : (
+                      <div className='flex h-14 w-14 items-center justify-center rounded-full text-[15px] font-semibold text-white' style={{ background: colors[index % colors.length] }}>
+                        {candidate.firstName[0]}{candidate.lastName[0]}
+                      </div>
+                    )}
+                    <div className='min-w-0 flex-1'>
+                      <div className='text-[15px] font-semibold' style={{ color: 'var(--text)' }}>
+                        {candidate.displayName || `${candidate.firstName} ${candidate.lastName}`}
+                      </div>
+                      {candidate.bio && (
+                        <div className='mt-2 line-clamp-3 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>
+                          {candidate.bio}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={() => deleteCandidate(candidate.id)}
+                    className='mt-4 rounded-[16px] border px-4 py-2 text-[13px] font-semibold'
+                    style={{ background: 'var(--surface)', borderColor: 'rgba(220,38,38,0.2)', color: 'var(--danger)' }}
+                  >
+                    Remove
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

@@ -22,7 +22,7 @@ export const organizationMemberApi = {
     api.get<ApiResponse<OrganizationMemberDto>>(`/organizationmember/${organizationId}/membership/${userId}`),
 
   approve: (organizationId: string, userId: string) => 
-    api.put<ApiResponse<boolean>>(`/organizationmember/${organizationId}/members/${userId}/approve`),
+    api.post<ApiResponse<boolean>>(`/organizationmember/${organizationId}/approve/${userId}`),
 
   reject: (organizationId: string, userId: string) => 
     api.put<ApiResponse<boolean>>(`/organizationmember/${organizationId}/members/${userId}/reject`),

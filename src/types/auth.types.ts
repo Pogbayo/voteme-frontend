@@ -15,6 +15,7 @@ export interface RegisterDto {
 export interface AuthResponseDto {
   firstName: string
   lastName: string
+  displayName?: string
   userId: string
   accessToken: string
   email: string

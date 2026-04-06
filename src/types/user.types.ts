@@ -18,11 +18,11 @@ export interface OrganizationUserDto {
   createdAt: string
 }
 
-// export interface UpdateUserDto {
-//   firstName?: string
-//   lastName?: string
-//   displayName?: string
-// }
+export interface UpdateUserDto {
+  firstName?: string
+  lastName?: string
+  displayName?: string
+}
 
 export interface PagedUserResult {
   users: UserDto[]

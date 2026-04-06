@@ -9,91 +9,79 @@ const ElectionResultsPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (electionId) getResults(electionId)
-  }, [electionId])
+    if (electionId) {
+      getResults(electionId).catch(() => {})
+    }
+  }, [electionId, getResults])
 
-  if (isLoading) return (
-    <div className='flex items-center justify-center py-16'>
-      <svg className='animate-spin w-6 h-6' fill='none' viewBox='0 0 24 24' style={{ color: 'var(--accent)' }}>
-        <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'/>
-        <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v8z'/>
-      </svg>
-    </div>
-  )
+  if (isLoading) {
+    return <div className='flex items-center justify-center py-16'><div className='animate-spin w-6 h-6 rounded-full border-4 border-[var(--accent)] border-t-transparent' /></div>
+  }
 
-  if (!electionResults) return <div className='text-center py-16' style={{ color: 'var(--text2)' }}>No results found</div>
+  if (!electionResults) {
+    return <div className='text-center py-16' style={{ color: 'var(--text2)' }}>No results found</div>
+  }
 
   return (
-    <div className='flex flex-col gap-5 max-w-3xl'>
-
-      <button onClick={() => navigate(-1)} className='flex items-center gap-1.5 text-[13px] w-fit' style={{ color: 'var(--text2)' }}>
-        <svg width='14' height='14' viewBox='0 0 16 16' fill='currentColor'><path d='M10 3L6 8l4 5'/></svg>
+    <div className='flex flex-col gap-5 md:gap-6'>
+      <button onClick={() => navigate(-1)} className='flex items-center gap-2 text-[13px] font-medium w-fit' style={{ color: 'var(--text2)' }}>
+        <svg width='14' height='14' viewBox='0 0 16 16' fill='currentColor'><path d='M10 3L6 8l4 5' /></svg>
         Back
       </button>
 
-      {/* Header */}
-      <div className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <div className='flex items-center justify-between'>
+      <section className='rounded-[26px] border p-5 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <div className='flex flex-col gap-3 md:flex-row md:items-end md:justify-between'>
           <div>
-            <h1 className='text-[18px] font-medium' style={{ color: 'var(--text)' }}>{electionResults.electionName}</h1>
-            <p className='text-[13px] mt-1' style={{ color: 'var(--text2)' }}>{electionResults.totalVotes} total votes</p>
+            <div className='text-[11px] font-semibold uppercase tracking-[0.16em]' style={{ color: 'var(--info)' }}>
+              Results overview
+            </div>
+            <h1 className='mt-3 text-[28px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+              {electionResults.electionName}
+            </h1>
+            <p className='mt-2 text-[14px] leading-6' style={{ color: 'var(--text2)' }}>
+              {electionResults.totalVotes} total votes counted.
+            </p>
           </div>
-          <span className='text-[11px] font-medium px-2.5 py-1 rounded-full' style={{ background: 'var(--surface2)', color: 'var(--text3)' }}>
-            Closed
-          </span>
+          <div className='rounded-full px-3 py-1.5 text-[12px] font-semibold' style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>
+            Closed election
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Category results */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-        {electionResults.categoryResults.map(cat => (
-          <div key={cat.electionCategoryId} className='rounded-[12px] p-5 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-            <div className='flex items-center justify-between mb-4'>
-              <span className='text-[13px] font-medium' style={{ color: 'var(--text)' }}>{cat.electionCategoryName}</span>
+      <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+        {electionResults.categoryResults.map((cat) => (
+          <div key={cat.electionCategoryId} className='rounded-[24px] border p-5 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+            <div className='flex items-center justify-between gap-3'>
+              <div className='text-[16px] font-semibold' style={{ color: 'var(--text)' }}>
+                {cat.electionCategoryName}
+              </div>
               {cat.winner && (
-                <span className='text-[10px] font-medium px-2 py-1 rounded-full' style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
+                <span className='rounded-full px-2.5 py-1 text-[10px] font-semibold' style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
                   {cat.winner.isTie ? 'Tie' : 'Winner declared'}
                 </span>
               )}
             </div>
 
-            <div className='flex flex-col gap-3'>
-              {cat.results.map((r, i) => (
-                <div key={r.candidateId} className='flex items-center gap-2.5'>
-                  <div
-                    className='w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-medium text-white flex-shrink-0'
-                    style={{ background: i === 0 ? 'var(--accent)' : 'var(--text3)' }}
-                  >
-                    {r.firstName[0]}{r.lastName[0]}
+            <div className='mt-5 flex flex-col gap-4'>
+              {cat.results.map((result, index) => (
+                <div key={result.candidateId} className='rounded-[18px] border p-4' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
+                  <div className='flex items-center justify-between gap-3'>
+                    <div className='text-[14px] font-semibold' style={{ color: 'var(--text)' }}>
+                      {result.displayName || `${result.firstName} ${result.lastName}`}
+                    </div>
+                    <div className='text-[12px] font-semibold' style={{ color: index === 0 ? 'var(--accent)' : 'var(--text2)' }}>
+                      {formatPercentage(result.percentage)}
+                    </div>
                   </div>
-                  <div className='flex-1 min-w-0'>
-                    <div className='flex items-center justify-between mb-1'>
-                      <span className='text-[12px] truncate' style={{ color: 'var(--text)' }}>
-                        {r.displayName || `${r.firstName} ${r.lastName}`}
-                      </span>
-                      <span className='text-[11px] ml-2 flex-shrink-0' style={{ color: 'var(--text2)' }}>
-                        {formatPercentage(r.percentage)}
-                      </span>
-                    </div>
-                    <div className='h-[5px] rounded-full overflow-hidden' style={{ background: 'var(--surface2)' }}>
-                      <div
-                        className='h-full rounded-full transition-all'
-                        style={{
-                          width: `${r.percentage}%`,
-                          background: i === 0 ? 'var(--accent)' : 'var(--border)',
-                        }}
-                      />
-                    </div>
+                  <div className='mt-3 h-[8px] rounded-full overflow-hidden' style={{ background: 'rgba(16,42,67,0.08)' }}>
+                    <div
+                      className='h-full rounded-full'
+                      style={{ width: `${result.percentage}%`, background: index === 0 ? 'var(--accent)' : '#a8bfd6' }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
-
-            {cat.winner?.isTie && (
-              <div className='mt-3 pt-3 border-t text-[11px]' style={{ borderColor: 'var(--border)', color: 'var(--text3)' }}>
-                Tied: {cat.winner.tiedCandidates?.map(t => t.displayName || `${t.firstName} ${t.lastName}`).join(' & ')}
-              </div>
-            )}
           </div>
         ))}
       </div>

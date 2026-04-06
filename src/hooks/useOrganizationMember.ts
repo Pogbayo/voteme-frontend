@@ -4,6 +4,10 @@ export const useOrganizationMember = () => {
   const members = useOrganizationMemberStore((state) => state.members)
   const pendingMembers = useOrganizationMemberStore((state) => state.pendingMembers)
   const isLoading = useOrganizationMemberStore((state) => state.isLoading)
+  const isMembersLoading = useOrganizationMemberStore((state) => state.isMembersLoading)
+  const isPendingMembersLoading = useOrganizationMemberStore((state) => state.isPendingMembersLoading)
+  const actionLoadingUserId = useOrganizationMemberStore((state) => state.actionLoadingUserId)
+  const actionLoadingType = useOrganizationMemberStore((state) => state.actionLoadingType)
   const error = useOrganizationMemberStore((state) => state.error)
   const isUpdated = useOrganizationMemberStore((state) => state.isUpdated)
   const isDeleted = useOrganizationMemberStore((state) => state.isDeleted)
@@ -23,6 +27,10 @@ export const useOrganizationMember = () => {
     members,
     pendingMembers,
     isLoading,
+    isMembersLoading,
+    isPendingMembersLoading,
+    actionLoadingUserId,
+    actionLoadingType,
     error,
     isUpdated,
     isDeleted,

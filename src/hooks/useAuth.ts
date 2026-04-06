@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/authStore'
+import { useOrganizationMember } from './useOrganizationMember'
 
 export const useAuth = () => {
   const user = useAuthStore((state) => state.user)
@@ -10,11 +11,9 @@ export const useAuth = () => {
   const register = useAuthStore((state) => state.register)
   const logout = useAuthStore((state) => state.logout)
   const clearError = useAuthStore((state) => state.clearError)
+  const { memberShip } = useOrganizationMember()
 
-  // const hasRole = (role: string) => user?.roles?.includes(role) ?? false
-  // const isOrgAdmin = hasRole('OrgAdmin')
-  // const isSuperAdmin = hasRole('SuperAdmin')
-  // const isVoter = hasRole('Voter')
+  const isOrgAdmin = memberShip?.role === 1 || memberShip?.role === 2
 
   return {
     user,
@@ -26,9 +25,6 @@ export const useAuth = () => {
     register,
     logout,
     clearError,
-    // hasRole,
-    // isOrgAdmin,
-    // isSuperAdmin,
-    // isVoter,
+    isOrgAdmin,
   }
 }

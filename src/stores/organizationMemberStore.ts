@@ -3,10 +3,22 @@ import { organizationMemberApi } from '../api/organizationMemberApi'
 import type { JoinOrgDto, OrganizationMemberDto, PendingMemberDto } from '../types/organizationMember.types'
 import { useOrganizationStore } from './organizationStore'
 
+const MEMBER_REQUEST_DEDUPE_MS = 2000
+let lastPendingMembersRequestKey = ''
+let lastPendingMembersRequestAt = 0
+let lastMembersRequestKey = ''
+let lastMembersRequestAt = 0
+let lastMembershipRequestKey = ''
+let lastMembershipRequestAt = 0
+
 interface MemberState {
   members: OrganizationMemberDto[]
   pendingMembers: PendingMemberDto[]
   isLoading: boolean
+  isMembersLoading: boolean
+  isPendingMembersLoading: boolean
+  actionLoadingUserId: string | null
+  actionLoadingType: 'approve' | 'reject' | 'remove' | 'promote' | 'demote' | null
   error: string | null
   isUpdated: boolean
   isDeleted: boolean
@@ -25,28 +37,67 @@ interface MemberState {
   clearError: () => void
 }
 
-const getMembersAction = async (set: any, organizationId: string, page?: number, pageSize?: number) => {
-  set({ isLoading: true, error: null })
+const getMembersAction = async (
+  set: any,
+  organizationId: string,
+  page?: number,
+  pageSize?: number,
+  force = false
+) => {
+  const requestKey = `${organizationId}:${page ?? 1}:${pageSize ?? 20}`
+  const now = Date.now()
+
+  if (
+    !force &&
+    requestKey === lastMembersRequestKey &&
+    now - lastMembersRequestAt < MEMBER_REQUEST_DEDUPE_MS
+  ) {
+    return
+  }
+
+  lastMembersRequestKey = requestKey
+  lastMembersRequestAt = now
+  set({ isLoading: true, isMembersLoading: true, error: null })
   try {
     const response = await organizationMemberApi.getMembers(organizationId, page, pageSize)
     if (!response.data.success || !response.data.data)
       throw new Error(response.data.message)
-    set({ members: response.data.data, isLoading: false })
+    set({ members: response.data.data, isLoading: false, isMembersLoading: false })
   } catch (error: any) {
-    set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+    set({
+      error: error.response?.data?.message ?? error.message,
+      isLoading: false,
+      isMembersLoading: false,
+    })
     throw error
   }
 }
 
-const getPendingMembersAction = async (set: any, organizationId: string) => {
-  set({ isLoading: true, error: null })
+const getPendingMembersAction = async (set: any, organizationId: string, force = false) => {
+  const now = Date.now()
+
+  if (
+    !force &&
+    organizationId === lastPendingMembersRequestKey &&
+    now - lastPendingMembersRequestAt < MEMBER_REQUEST_DEDUPE_MS
+  ) {
+    return
+  }
+
+  lastPendingMembersRequestKey = organizationId
+  lastPendingMembersRequestAt = now
+  set({ isLoading: true, isPendingMembersLoading: true, error: null })
   try {
     const response = await organizationMemberApi.getPendingMembers(organizationId)
     if (!response.data.success || !response.data.data)
       throw new Error(response.data.message)
-    set({ pendingMembers: response.data.data, isLoading: false })
+    set({ pendingMembers: response.data.data, isLoading: false, isPendingMembersLoading: false })
   } catch (error: any) {
-    set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+    set({
+      error: error.response?.data?.message ?? error.message,
+      isLoading: false,
+      isPendingMembersLoading: false,
+    })
     throw error
   }
 }
@@ -56,6 +107,10 @@ export const useOrganizationMemberStore = create<MemberState>((set) => ({
   members: [],
   pendingMembers: [],
   isLoading: false,
+  isMembersLoading: false,
+  isPendingMembersLoading: false,
+  actionLoadingUserId: null,
+  actionLoadingType: null,
   error: null,
   isUpdated: false,
   isDeleted: false,
@@ -69,7 +124,13 @@ export const useOrganizationMemberStore = create<MemberState>((set) => ({
   },
 
 approveMember: async (organizationId, userId) => {
-  set({ isLoading: true, error: null, isUpdated: false })
+  set({
+    isLoading: true,
+    error: null,
+    isUpdated: false,
+    actionLoadingUserId: userId,
+    actionLoadingType: 'approve',
+  })
   try {
     const response = await organizationMemberApi.approve(organizationId, userId)
     if (!response.data.success)
@@ -79,15 +140,28 @@ approveMember: async (organizationId, userId) => {
       isLoading: false,
       isUpdated: true
     }))
-      await getMembersAction(set, organizationId)
+      await getMembersAction(set, organizationId, undefined, undefined, true)
+      await getPendingMembersAction(set, organizationId, true)
+      set({ actionLoadingUserId: null, actionLoadingType: null })
   } catch (error: any) {
-    set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+    set({
+      error: error.response?.data?.message ?? error.message,
+      isLoading: false,
+      actionLoadingUserId: null,
+      actionLoadingType: null,
+    })
     throw error
   }
 },
  
 rejectMember: async (organizationId, userId) => {
-    set({ isLoading: true, error: null, isDeleted: false })
+    set({
+      isLoading: true,
+      error: null,
+      isDeleted: false,
+      actionLoadingUserId: userId,
+      actionLoadingType: 'reject',
+    })
     try {
       const response = await organizationMemberApi.reject(organizationId, userId)
       if (!response.data.success)
@@ -97,14 +171,27 @@ rejectMember: async (organizationId, userId) => {
         isLoading: false,
         isDeleted: true
       }))
+      await getPendingMembersAction(set, organizationId, true)
+      set({ actionLoadingUserId: null, actionLoadingType: null })
     } catch (error: any) {
-      set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+      set({
+        error: error.response?.data?.message ?? error.message,
+        isLoading: false,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
+      })
       throw error
     }
   },
 
   removeMember: async (organizationId, userId) => {
-    set({ isLoading: true, error: null, isDeleted: false })
+    set({
+      isLoading: true,
+      error: null,
+      isDeleted: false,
+      actionLoadingUserId: userId,
+      actionLoadingType: 'remove',
+    })
     try {
       const response = await organizationMemberApi.removeMember(organizationId, userId)
       if (!response.data.success)
@@ -112,20 +199,38 @@ rejectMember: async (organizationId, userId) => {
       set((state) => ({
         members: state.members.filter(m => m.userId !== userId),
         isLoading: false,
-        isDeleted: true
+        isDeleted: true,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
       }))
     } catch (error: any) {
-      set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+      set({
+        error: error.response?.data?.message ?? error.message,
+        isLoading: false,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
+      })
       throw error
     }
   },
 
   getOrganizationMembership: async (organizationId, userId) => {
-    set({ isLoading: true, error: null, memberShip: null }) 
+    const requestKey = `${organizationId}:${userId}`
+    const now = Date.now()
+
+    if (
+      requestKey === lastMembershipRequestKey &&
+      now - lastMembershipRequestAt < MEMBER_REQUEST_DEDUPE_MS
+    ) {
+      return
+    }
+
+    lastMembershipRequestKey = requestKey
+    lastMembershipRequestAt = now
+    set({ isLoading: true, error: null })
     try {
       const response = await organizationMemberApi.getMemberShip(organizationId, userId)
       set({ memberShip: response.data.data, isLoading: false })
-      console.log('Membership status:', response.data.data) // Debug log
     } catch (error: any) {
       set({ error: error.response?.data?.message ?? error.message, isLoading: false })
       throw error
@@ -133,7 +238,13 @@ rejectMember: async (organizationId, userId) => {
   },
 
   promoteToAdmin: async (organizationId, userId) => {
-    set({ isLoading: true, error: null, isUpdated: false })
+    set({
+      isLoading: true,
+      error: null,
+      isUpdated: false,
+      actionLoadingUserId: userId,
+      actionLoadingType: 'promote',
+    })
     try {
       const response = await organizationMemberApi.promoteToAdmin(organizationId, userId)
       if (!response.data.success)
@@ -141,16 +252,29 @@ rejectMember: async (organizationId, userId) => {
       set((state) => ({
         members: state.members.map(m => m.userId === userId ? { ...m, role: 1 } : m), 
         isLoading: false,
-        isUpdated: true
+        isUpdated: true,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
       }))
     } catch (error: any) {
-      set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+      set({
+        error: error.response?.data?.message ?? error.message,
+        isLoading: false,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
+      })
       throw error
     }
   },
 
   demoteFromAdmin: async (organizationId, userId) => {
-    set({ isLoading: true, error: null, isUpdated: false })
+    set({
+      isLoading: true,
+      error: null,
+      isUpdated: false,
+      actionLoadingUserId: userId,
+      actionLoadingType: 'demote',
+    })
     try {
       const response = await organizationMemberApi.demoteFromAdmin(organizationId, userId)
       if (!response.data.success)
@@ -158,10 +282,17 @@ rejectMember: async (organizationId, userId) => {
       set((state) => ({
         members: state.members.map(m => m.userId === userId ? { ...m, role: 0 } : m), // Adjust based on DTO
         isLoading: false,
-        isUpdated: true
+        isUpdated: true,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
       }))
     } catch (error: any) {
-      set({ error: error.response?.data?.message ?? error.message, isLoading: false })
+      set({
+        error: error.response?.data?.message ?? error.message,
+        isLoading: false,
+        actionLoadingUserId: null,
+        actionLoadingType: null,
+      })
       throw error
     }
   },
@@ -201,6 +332,10 @@ rejectMember: async (organizationId, userId) => {
   clearMembers: () => set({
   members: [],
   pendingMembers: [],
+  isMembersLoading: false,
+  isPendingMembersLoading: false,
+  actionLoadingUserId: null,
+  actionLoadingType: null,
   error: null,
 }),
 }))

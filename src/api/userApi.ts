@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance'
 import type { ApiResponse } from '../types/api.types'
-import type { UserDto, OrganizationUserDto } from '../types/user.types'
+import type { UserDto, OrganizationUserDto, UpdateUserDto } from '../types/user.types'
 
 class UserApi {
   getById(userId: string) {
@@ -15,12 +15,12 @@ class UserApi {
     )
   }
 
- // update(userId: string, dto: UpdateUserDto) {
-  //   return axiosInstance.patch<ApiResponse<OrganizationUserDto>>(
-  //     `/Users/${userId}`,
-  //     dto
-  //   )
-  // }
+  update(userId: string, dto: UpdateUserDto) {
+    return axiosInstance.patch<ApiResponse<OrganizationUserDto>>(
+      `/Users/${userId}`,
+      dto
+    )
+  }
   
   getOrganizationUsers(organizationId: string, page = 1, pageSize = 20) {
     return axiosInstance.get<ApiResponse<OrganizationUserDto[]>>(

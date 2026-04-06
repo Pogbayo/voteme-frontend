@@ -1,228 +1,265 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useOrganizationStore } from '../../stores/organizationStore'
 import { useNavigate } from 'react-router-dom'
+import { useOrganizationStore } from '../../stores/organizationStore'
 import { useAuthStore } from '../../stores/authStore'
 
 const createOrgSchema = z.object({
   organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
   description: z.string().optional(),
-  firstName: z.string().min(1, 'First name is required').optional(),
-  lastName: z.string().min(1, 'Last name is required').optional(),
   displayName: z.string().optional(),
   email: z.string().email('Please enter a valid email'),
   logoFile: z.instanceof(File).optional(),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
 })
 
 type CreateOrgFormData = z.infer<typeof createOrgSchema>
 
+const inputClassName =
+  'w-full rounded-[18px] border px-4 py-3.5 text-[14px] outline-none transition'
+
 const CreateOrganizationPage = () => {
-  const { createOrganization, isLoading } = useOrganizationStore()
+  const { createOrganization, isLoading, error, clearError } = useOrganizationStore()
   const navigate = useNavigate()
-  const { user } = useAuthStore();
+  const { user } = useAuthStore()
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    setValue,
     reset,
+    formState: { errors },
   } = useForm<CreateOrgFormData>({
     resolver: zodResolver(createOrgSchema),
     defaultValues: {
+      displayName: user?.displayName || `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
       email: user?.email || '',
     },
   })
 
+  useEffect(() => {
+    reset({
+      displayName: user?.displayName || `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+      email: user?.email || '',
+      organizationName: '',
+      description: '',
+    })
+  }, [reset, user?.displayName, user?.email, user?.firstName, user?.lastName])
+
+  useEffect(() => {
+    clearError()
+  }, [clearError])
+
+  const fieldStyle = (borderColor: string) => ({
+    background: 'var(--surface2)',
+    borderColor,
+    color: 'var(--text)',
+    WebkitTextFillColor: 'var(--text)',
+    caretColor: 'var(--text)',
+  })
+
   const onSubmit = async (data: CreateOrgFormData) => {
-    console.log('Form data:', data) // Debug log
+    clearError()
     try {
-      await createOrganization(data)
-      reset()
+      await createOrganization({
+        ...data,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        displayName:
+          data.displayName?.trim() || user?.displayName || `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+        email: data.email.trim(),
+      })
       navigate('/dashboard')
-    } catch (err: any) {
-      console.error(err)
-      alert(err.response?.data?.message || 'Failed to create organization')
+    } catch {
+      // store manages error state
     }
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-2 w-9 h-9 rounded-2xl flex items-center justify-center" 
-               style={{ background: 'var(--accent)' }}>
-            <span className="text-2xl text-white">+</span>
-          </div>
-          <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text)' }}>
-            Create new Organization
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--text2)' }}>
-            You will be the Owner of this organization
-          </p>
-        </div>
-
-        {/* Form Card */}
-        <div 
-          className="rounded-3xl p-8 border"
-          style={{ 
-            background: 'var(--surface)', 
-            borderColor: 'var(--border)' 
+    <div className='min-h-screen px-4 py-8 sm:px-6 lg:px-8' style={{ background: 'var(--bg)' }}>
+      <div className='mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1180px] items-center justify-center'>
+        <div
+          className='grid w-full max-w-[1080px] overflow-hidden rounded-[32px] border md:grid-cols-[0.9fr_1.1fr]'
+          style={{
+            background: 'var(--surface)',
+            borderColor: 'var(--border)',
+            boxShadow: '0 24px 60px rgba(4, 18, 34, 0.18)',
           }}
         >
-         <form onSubmit={handleSubmit((data) => {
-              console.log('Form data:', data);
-              onSubmit(data);
-            })}>
-
-            {/* Organization Name */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                Organization Name
-              </label>
-              <input
-                {...register('organizationName')}
-                placeholder="e.g. Tech Innovators"
-                className="w-full px-4 py-3 rounded-1xl text-sm focus:outline-none border transition-colors"
-                style={{
-                  background: 'var(--surface2)',
-                  borderColor: errors.organizationName ? 'var(--danger)' : 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-              {errors.organizationName && (
-                <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.organizationName.message}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                Description <span className="opacity-60">(optional)</span>
-              </label>
-              <textarea
-                {...register('description')}
-                placeholder="Brief description of your organization"
-                rows={2}
-                className="w-full px-4 py-3 rounded-1xl text-sm resize-y focus:outline-none border"
-                style={{
-                  background: 'var(--surface2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-            </div>
-
-            {/* Name Fields */}
-            {/* <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>First Name</label>
-                <input
-                  {...register('adminFirstName')}
-                  placeholder="John"
-                  className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none border"
-                  style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                />
+          <section
+            className='flex flex-col justify-between gap-8 px-6 py-8 sm:px-8 sm:py-10'
+            style={{ background: 'var(--surface2)', borderRight: '1px solid var(--border)' }}
+          >
+            <div className='space-y-8'>
+              <div className='flex items-center gap-3'>
+                <div
+                  className='flex h-12 w-12 items-center justify-center rounded-[16px]'
+                  style={{ background: 'var(--accent)' }}
+                >
+                  <svg width='20' height='20' viewBox='0 0 16 16' fill='white'>
+                    <path d='M8 1L2 5v6l6 4 6-4V5z' />
+                  </svg>
+                </div>
+                <div>
+                  <div className='text-[18px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+                    VoteMe
+                  </div>
+                  <div className='text-[11px] uppercase tracking-[0.18em]' style={{ color: 'var(--text3)' }}>
+                    Create workspace
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>Last Name</label>
-                <input
-                  {...register('adminLastName')}
-                  placeholder="Doe"
-                  className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none border"
-                  style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                />
+
+              <div className='space-y-4'>
+                <div
+                  className='inline-flex rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.22em]'
+                  style={{ borderColor: 'var(--border)', color: 'var(--text3)' }}
+                >
+                  Existing user
+                </div>
+                <h1
+                  className='max-w-[360px] text-[34px] font-semibold leading-[1.05] sm:text-[40px]'
+                  style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}
+                >
+                  Create another organization
+                </h1>
+                <p className='max-w-[430px] text-[14px] leading-7 sm:text-[15px]' style={{ color: 'var(--text2)' }}>
+                  Use your current account details and set up a fresh workspace without leaving the dashboard flow.
+                </p>
               </div>
-            </div> */}
-
-            {/* Display Name */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                Display Name (optional)
-              </label>
-              <input
-                {...register('displayName')}
-                placeholder="John D."
-                className="w-full px-4 py-3 rounded-1xl text-sm focus:outline-none border"
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
             </div>
 
-
-            {/* Logo */}
-            <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                Organization Logo
-            </label>
-            <input
-                type="file"
-                {...register('logoFile')}
-                accept="image/*"
-                className="w-full px-4 py-3 rounded-1xl text-sm focus:outline-none border"
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            />
+            <div className='grid gap-3'>
+              {[
+                'Your current account stays connected',
+                'The new workspace is added to your organization switcher',
+                'You become the first owner for that workspace',
+              ].map(item => (
+                <div
+                  key={item}
+                  className='rounded-[18px] border px-4 py-3 text-[13px]'
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text2)',
+                  }}
+                >
+                  {item}
+                </div>
+              ))}
             </div>
+          </section>
 
-            {/* Email */}
-            {/* <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>Email Address</label>
-              <input
-                {...register('adminEmail')}
-                type="email"
-                placeholder="admin@company.com"
-                className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none border"
-                style={{
-                  background: 'var(--surface2)',
-                  borderColor: errors.adminEmail ? 'var(--danger)' : 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-              {errors.adminEmail && (
-                <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.adminEmail.message}</p>
+          <section className='px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12'>
+            <div className='mx-auto max-w-[560px]'>
+              <div className='mb-8 space-y-2'>
+                <h2 className='text-[28px] font-semibold' style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
+                  Organization details
+                </h2>
+                <p className='text-[14px] leading-6' style={{ color: 'var(--text2)' }}>
+                  Fill the workspace details below. If something blocks submission, you will see the message here instead of a silent failure.
+                </p>
+              </div>
+
+              {error && (
+                <div
+                  className='mb-5 rounded-[18px] border px-4 py-3 text-[13px]'
+                  style={{
+                    background: 'var(--danger-bg)',
+                    borderColor: 'rgba(220,38,38,0.18)',
+                    color: 'var(--danger)',
+                  }}
+                >
+                  {error}
+                </div>
               )}
-            </div> */}
 
-            {/* Phone */}
-            {/* <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>Phone Number</label>
-              <input
-                {...register('adminPhoneNumber')}
-                placeholder="+234 801 234 5678"
-                className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none border"
-                style={{ background: 'var(--surface2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              />
-            </div> */}
+              <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                <label className='block space-y-2'>
+                  <span className='text-[12px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>
+                    Organization name
+                  </span>
+                  <input
+                    {...register('organizationName')}
+                    placeholder='VoteMe Students Council'
+                    className={inputClassName}
+                    style={fieldStyle(errors.organizationName ? 'var(--danger)' : 'var(--border)')}
+                  />
+                  {errors.organizationName && <p className='text-[12px]' style={{ color: 'var(--danger)' }}>{errors.organizationName.message}</p>}
+                </label>
 
-            {/* Password */}
-            {/* <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>Password</label>
-              <input
-                {...register('password')}
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none border"
-                style={{
-                  background: 'var(--surface2)',
-                  borderColor: errors.password ? 'var(--danger)' : 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-              {errors.password && (
-                <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.password.message}</p>
-              )}
-            </div> */}
+                <div className='grid gap-4 sm:grid-cols-2'>
+                  <label className='space-y-2'>
+                    <span className='text-[12px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>
+                      Display name
+                    </span>
+                    <input
+                      {...register('displayName')}
+                      placeholder='How members should see you'
+                      className={inputClassName}
+                      style={fieldStyle('var(--border)')}
+                    />
+                  </label>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              // disabled={isLoading}
-              className="w-full py-3.5 rounded-1xl text-sm font-semibold text-white mt-4 transition-all disabled:opacity-70"
-              style={{ background: 'var(--accent)' }}
-            >
-              {isLoading ? 'Creating Organization...' : 'Create Organization'}
-            </button>
-          </form>
+                  <label className='space-y-2'>
+                    <span className='text-[12px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>
+                      Email address
+                    </span>
+                    <input
+                      {...register('email')}
+                      type='email'
+                      placeholder='admin@example.com'
+                      className={inputClassName}
+                      style={fieldStyle(errors.email ? 'var(--danger)' : 'var(--border)')}
+                    />
+                    {errors.email && <p className='text-[12px]' style={{ color: 'var(--danger)' }}>{errors.email.message}</p>}
+                  </label>
+                </div>
+
+                <label className='block space-y-2'>
+                  <span className='text-[12px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>
+                    Organization description
+                  </span>
+                  <textarea
+                    {...register('description')}
+                    rows={4}
+                    placeholder='Tell members what this workspace is for'
+                    className={`${inputClassName} resize-none`}
+                    style={fieldStyle('var(--border)')}
+                  />
+                </label>
+
+                <label className='block space-y-2'>
+                  <span className='text-[12px] font-semibold uppercase tracking-[0.14em]' style={{ color: 'var(--text3)' }}>
+                    Organization logo
+                  </span>
+                  <input
+                    type='file'
+                    accept='image/*'
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) {
+                        setValue('logoFile', file)
+                      }
+                    }}
+                    className='block w-full text-[13px]'
+                    style={{ color: 'var(--text2)' }}
+                  />
+                  {errors.logoFile && <p className='text-[12px]' style={{ color: 'var(--danger)' }}>{errors.logoFile.message}</p>}
+                </label>
+
+                <button
+                  type='submit'
+                  disabled={isLoading}
+                  className='w-full rounded-[18px] px-5 py-3.5 text-[14px] font-semibold text-white disabled:opacity-60'
+                  style={{ background: 'var(--accent)' }}
+                >
+                  {isLoading ? 'Creating organization...' : 'Create organization'}
+                </button>
+              </form>
+            </div>
+          </section>
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ export interface ElectionDto {
   isPrivate: boolean
   organizationId: string
   categories: ElectionCategoryDto[]
+  categoryCount?: number
   createdAt: string
 }
 

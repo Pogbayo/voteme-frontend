@@ -41,7 +41,7 @@ const DashboardLayout = () => {
           <div className='w-[34px]' />
         </div>
 
-        <main className='flex-1 overflow-y-auto p-4 md:p-6'>
+        <main className='flex-1 overflow-y-auto no-scrollbar p-4 md:p-6'>
           <Outlet />
         </main>
       </div>

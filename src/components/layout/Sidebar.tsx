@@ -27,7 +27,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     getUserOrganizations().catch(() => {})
-  }, [])
+  }, [getUserOrganizations])
 
   const switchOrg = (org: any) => {
   if (!org || org.id === currentOrganization?.id) return;
@@ -73,30 +73,35 @@ const allowedRoles = [1, 2];
 
   const sidebarContent = (
     <div
-      className='flex flex-col h-full transition-all duration-200'
+      className='flex flex-col h-full overflow-hidden transition-all duration-200'
       style={{
-        width: collapsed ? 56 : 216,
+        width: collapsed ? 64 : 236,
         background: 'var(--sidebar)',
         minHeight: '100vh',
       }}
     >
-      <div className='flex-1 p-3 flex flex-col overflow-hidden'>
+      <div className='flex-1 p-3 flex flex-col overflow-y-auto no-scrollbar'>
 
         {/* Logo + collapse toggle */}
         <div className={`flex items-center mb-7 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className='flex items-center gap-2 overflow-hidden'>
+          <div className='flex items-center gap-3 overflow-hidden'>
             <div
-              className='w-[30px] h-[30px] rounded-[8px] flex items-center justify-center flex-shrink-0'
-              style={{ background: 'var(--accent)' }}
+              className='w-[34px] h-[34px] rounded-[12px] flex items-center justify-center flex-shrink-0'
+                style={{ background: 'var(--accent)' }}
             >
               <svg width='16' height='16' viewBox='0 0 16 16' fill='white'>
                 <path d='M8 1L2 5v6l6 4 6-4V5z'/>
               </svg>
             </div>
             {!collapsed && (
-              <span className='text-[16px] font-medium truncate' style={{ color: 'var(--sidebar-text)' }}>
-                VoteMe
-              </span>
+              <div className='min-w-0'>
+                <div className='text-[15px] font-semibold truncate' style={{ color: 'var(--sidebar-text)', fontFamily: 'var(--font-display)' }}>
+                  VoteMe
+                </div>
+                <div className='text-[10px] uppercase tracking-[0.16em]' style={{ color: 'var(--sidebar-muted)' }}>
+                  workspace
+                </div>
+              </div>
             )}
           </div>
           <button
@@ -118,21 +123,23 @@ const allowedRoles = [1, 2];
           <div className='relative mb-5'>
             <div
               onClick={() => setShowOrgDropdown(!showOrgDropdown)}
-              className='rounded-[8px] p-2.5 flex items-center gap-2 cursor-pointer'
-              style={{ background: 'var(--sidebar-active)' }}
+              className='rounded-[14px] p-3 flex items-center gap-2 cursor-pointer border'
+              style={{ background: 'var(--sidebar-active)', borderColor: 'rgba(255,255,255,0.08)' }}
             >
-              <div className='w-2 h-2 rounded-full flex-shrink-0' style={{ background: 'var(--accent)' }} />
+              <div className='w-2.5 h-2.5 rounded-full flex-shrink-0' style={{ background: 'var(--accent)' }} />
               <div className='flex-1 overflow-hidden'>
                 <div className='text-[12px] font-medium truncate' style={{ color: 'var(--sidebar-text)' }}>
                   {currentOrganization?.name ?? 'Select organization'}
                 </div>
-                <div className='text-[10px]' style={{ color: 'var(--sidebar-muted)' }}>
-                    {memberShip?.role === 0 ? 'Member' : 
-                      memberShip?.role === 1 ? 'Admin' : 
-                      memberShip?.role === 2 ? 'Owner' : 
+                {currentOrganization && (
+                  <div className='text-[10px]' style={{ color: 'var(--sidebar-muted)' }}>
+                    {memberShip?.role === 0 ? 'Member' :
+                      memberShip?.role === 1 ? 'Admin' :
+                      memberShip?.role === 2 ? 'Owner' :
                       ''
                     }
-                     </div>
+                  </div>
+                )}
               </div>
               <svg
                 width='12' height='12' viewBox='0 0 16 16'
@@ -145,23 +152,21 @@ const allowedRoles = [1, 2];
             {showOrgDropdown && userOrganizations.length > 0 && (
               <div
                 className='absolute left-0 right-0 top-full mt-1 rounded-[8px] overflow-hidden z-50 border'
-                style={{ background: 'var(--sidebar-active)', borderColor: 'var(--border)' }}
+                style={{ background: 'var(--sidebar-active)', borderColor: 'rgba(255,255,255,0.08)' }}
               >
                 {userOrganizations.map((org) => (
                   <div
                     key={org.id}
                     onClick={() => switchOrg(org)}
-                    className='px-3 py-2.5 cursor-pointer text-[12px] hover:opacity-80'
+                    className='px-3 py-2.5 cursor-pointer text-[12px] transition-colors'
                     style={{
-                      color: currentOrganization?.id === org.id ? 'var(--accent)' : 'var(--sidebar-text)',
-                      borderBottom: '0.5px solid var(--border)',
+                      background: currentOrganization?.id === org.id ? 'rgba(47,134,255,0.12)' : 'var(--sidebar-active)',
+                      color: 'var(--sidebar-text)',
+                      borderBottom: '0.5px solid rgba(255,255,255,0.08)',
                     }}
                   >
-                    <>
                     <p>{org.name}</p>
-              
-                    </>                
-                 </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -172,10 +177,14 @@ const allowedRoles = [1, 2];
               setMobileOpen(false)
               navigate('/organization/create-organization')}   
             }
-              className='px-2.5 py-2 rounded-[7px] text-[12px] cursor-pointer hover:opacity-80'
-            style={{ color: 'var(--accent)' }}
+              className={`rounded-[12px] text-[12px] cursor-pointer hover:opacity-90 border mb-2 flex items-center ${
+                collapsed ? 'justify-center px-2 py-2.5' : 'gap-2 px-3 py-2.5'
+              }`}
+            style={{ color: 'var(--sidebar-text)', background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.08)' }}
+            title={collapsed ? 'Create organization' : undefined}
           >
-            + Create Organization
+            <span className='text-[14px] leading-none'>+</span>
+            {!collapsed && <span>Create Organization</span>}
           </div>
         {/* Nav items */}
         {navItem('/dashboard', 'Dashboard',
@@ -198,12 +207,6 @@ const allowedRoles = [1, 2];
           <svg width='15' height='15' viewBox='0 0 16 16' fill='currentColor'>
             <rect x='1' y='4' width='14' height='10' rx='1'/>
             <path d='M5 4V3a3 3 0 016 0v1'/>
-          </svg>
-        )}
-
-        {navItem('/results', 'Results',
-          <svg width='15' height='15' viewBox='0 0 16 16' fill='currentColor'>
-            <path d='M2 12l4-4 3 3 5-6'/>
           </svg>
         )}
 
@@ -282,7 +285,7 @@ const allowedRoles = [1, 2];
           {!collapsed && (
             <div className='flex-1 overflow-hidden'>
               <div className='text-[12px] font-medium truncate' style={{ color: 'var(--sidebar-text)' }}>
-                {user?.displayName || `${user?.firstName} ${user?.lastName}`}
+                {user?.displayName?.trim() || `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()}
               </div>
               <div className='text-[10px]' style={{ color: 'var(--sidebar-muted)' }}>
                 Sign out
