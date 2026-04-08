@@ -7,6 +7,7 @@ import type {
   ElectionResultDto,
 } from '../types/election.types'
 import { electionApi } from '../api/electionApi'
+import type { ElectionCategoryDto } from '../types/electionCategory.types'
 
 const ELECTION_REQUEST_DEDUPE_MS = 2000
 let lastElectionRequestKey = ''
@@ -29,8 +30,7 @@ interface ElectionState {
   openElection: (id: string, dto: OpenElectionDto) => Promise<void>
   getResults: (id: string) => Promise<void>
 
-  // ✅ Internal — called by category store to sync categories
-  syncCategoryAdded: (electionId: string, category: import('../types/electionCategory.types').ElectionCategoryDto) => void
+  syncCategoryAdded: (electionId: string, category:ElectionCategoryDto) => void
   syncCategoryDeleted: (electionId: string, categoryId: string) => void
 
   clearError: () => void
@@ -188,6 +188,7 @@ export const useElectionStore = create<ElectionState>((set) => ({
         ? { ...state.currentElection, categories: [...state.currentElection.categories, category] }
         : state.currentElection,
     }))
+    console.log(`Synced added category ${category.id} to election ${electionId}`)
   },
 
   syncCategoryDeleted: (electionId, categoryId) => {

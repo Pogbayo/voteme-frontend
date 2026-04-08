@@ -57,14 +57,12 @@ export const useElectionCategoryStore = create<ElectionCategoryState>((set, get)
 
       const newCategory = response.data.data
 
-      // ✅ Add to local categories list
       set((state) => ({
         categories: [...state.categories, newCategory],
         category: newCategory,
         loading: false,
       }))
 
-      // ✅ Sync to election store — update elections list with new category
       useElectionStore.getState().syncCategoryAdded(newCategory.electionId, newCategory)
 
     } catch (error: any) {

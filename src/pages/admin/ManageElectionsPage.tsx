@@ -31,7 +31,6 @@ const ManageElectionsPage = () => {
     createElection,
     deleteElection,
     openElection,
-    getElection,
     isLoading,
     error,
     clearError,
@@ -68,31 +67,35 @@ const ManageElectionsPage = () => {
   }
 
   const handleOpen = async (electionId: string) => {
-    if (!endDate) {
-      setOpenError('Please select an end date before opening this election.')
+  if (!endDate) {
+    setOpenError('Please select an end date before opening this election.')
+    return
+  }
+
+  try {
+    setOpenError(null)
+
+    const election = elections.find(e => e.id === electionId)
+    console.log('Election before opening:', election)
+
+    if (!election || (election.categoryCount ?? election.categories?.length ?? 0) < 1) {
+      setOpenError('This election has no categories yet. Add at least one category before opening it.')
       return
     }
 
-    try {
-      setOpenError(null)
-      const election = await getElection(electionId)
-      if (!election?.categories?.length) {
-        setOpenError('This election has no categories yet. Add at least one category before opening it.')
-        return
-      }
+    await openElection(electionId, { endDate: convertLocalToUTC(endDate) })
 
-      await openElection(electionId, { endDate: convertLocalToUTC(endDate) })
-      setOpeningId(null)
-      setEndDate('')
-      setOpenError(null)
+    setOpeningId(null)
+    setEndDate('')
+    setOpenError(null)
 
-      if (currentOrganization?.id) {
-        await getOrganizationElections(currentOrganization.id)
-      }
-    } catch (err: any) {
-      setOpenError(err.response?.data?.message || 'Failed to open election')
+    if (currentOrganization?.id) {
+      await getOrganizationElections(currentOrganization.id)
     }
+  } catch (err: any) {
+    setOpenError(err.response?.data?.message || 'Failed to open election')
   }
+}
 
   return (
     <div className='flex flex-col gap-5 md:gap-6'>
@@ -153,84 +156,176 @@ const ManageElectionsPage = () => {
       )}
 
       <section className='rounded-[26px] border p-4 md:p-6' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-        <div className='grid gap-4'>
-          {elections.map((election) => {
-            const tone = statusStyle[election.status]
-            const isOpening = openingId === election.id
+       <div className='grid gap-4'>
+        {elections.map((election) => {
+          // ✅ SAFE tone (never undefined)
+          const tone = statusStyle[election.status as number] ?? {
+            label: 'Unknown',
+            bg: 'var(--surface2)',
+            color: 'var(--text2)',
+          }
 
-            return (
-              <article key={election.id} className='rounded-[22px] border p-4 md:p-5' style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}>
-                <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-                  <div className='min-w-0 flex-1'>
-                    <div className='flex items-center gap-3 flex-wrap'>
-                      <div className='text-[16px] font-semibold' style={{ color: 'var(--text)' }}>{election.name}</div>
-                      <span className='rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]' style={{ background: tone.bg, color: tone.color }}>
-                        {tone.label}
-                      </span>
-                    </div>
-                    <div className='mt-2 text-[13px] leading-6' style={{ color: 'var(--text2)' }}>
-                      {getElectionCategoryCount(election.categoryCount, election.categories)} categories. Created {formatDate(election.createdAt)}.
+          const isOpening = openingId === election.id
+
+          return (
+            <article
+              key={election.id}
+              className='rounded-[22px] border p-4 md:p-5'
+              style={{ background: 'var(--surface2)', borderColor: 'var(--border)' }}
+            >
+              <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+                <div className='min-w-0 flex-1'>
+                  <div className='flex items-center gap-3 flex-wrap'>
+                    <div
+                      className='text-[16px] font-semibold'
+                      style={{ color: 'var(--text)' }}
+                    >
+                      {election.name}
                     </div>
 
-                    {isOpening && (
-                      <div className='mt-4 flex flex-col gap-3 md:flex-row md:items-center'>
-                        <div className='flex-1 min-w-[240px]'>
-                          <label className='block text-[11px] font-semibold uppercase tracking-[0.12em] mb-2' style={{ color: 'var(--text3)' }}>
-                            Election end date
-                          </label>
-                          <input
-                            type='datetime-local'
-                            value={endDate}
-                            onChange={(ev) => setEndDate(ev.target.value)}
-                            className='w-full rounded-[16px] border px-4 py-3 text-[13px] outline-none open-election-datetime'
-                            style={{ background: 'var(--surface)', borderColor: 'var(--accent)', color: 'var(--text)', colorScheme: 'light' }}
-                          />
-                          <p className='mt-2 text-[12px] leading-5' style={{ color: 'var(--text2)' }}>
-                            This date is when the election will end and voting will automatically close.
-                          </p>
-                          {openError && (
-                            <div className='mt-2 rounded-[14px] px-3 py-2 text-[12px]' style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
-                              {openError}
-                            </div>
-                          )}
-                        </div>
-                        <div className='flex flex-wrap items-center gap-3'>
-                          <button onClick={() => handleOpen(election.id)} disabled={!endDate} className='rounded-[16px] px-4 py-3 text-[13px] font-semibold text-white disabled:opacity-50' style={{ background: 'var(--accent)' }}>
-                            Confirm open
-                          </button>
-                          <button onClick={() => { setOpeningId(null); setOpenError(null); }} className='text-[13px] font-medium' style={{ color: 'var(--text2)' }}>
-                            Cancel
-                          </button>
-                        </div>
+                    {/* ✅ SAFE STATUS BADGE */}
+                    <span
+                      className='rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]'
+                      style={{
+                        background: tone.bg ?? 'var(--surface2)',
+                        color: tone.color ?? 'var(--text2)',
+                      }}
+                    >
+                      {tone.label ?? 'Unknown'}
+                    </span>
+                  </div>
+
+                  <div
+                    className='mt-2 text-[13px] leading-6'
+                    style={{ color: 'var(--text2)' }}
+                  >
+                    {getElectionCategoryCount(
+                      election.categoryCount,
+                      election.categories
+                    )}{' '}
+                    categories. Created {formatDate(election.createdAt)}.
+                  </div>
+
+                  {isOpening && (
+                    <div className='mt-4 flex flex-col gap-3 md:flex-row md:items-center'>
+                      <div className='flex-1 min-w-[240px]'>
+                        <label
+                          className='block text-[11px] font-semibold uppercase tracking-[0.12em] mb-2'
+                          style={{ color: 'var(--text3)' }}
+                        >
+                          Election end date
+                        </label>
+
+                        <input
+                          type='datetime-local'
+                          value={endDate}
+                          onChange={(ev) => setEndDate(ev.target.value)}
+                          className='w-full rounded-[16px] border px-4 py-3 text-[13px] outline-none open-election-datetime'
+                          style={{
+                            background: 'var(--surface)',
+                            borderColor: 'var(--accent)',
+                            color: 'var(--text)',
+                            colorScheme: 'light',
+                          }}
+                        />
+
+                        <p
+                          className='mt-2 text-[12px] leading-5'
+                          style={{ color: 'var(--text2)' }}
+                        >
+                          This date is when the election will end and voting will
+                          automatically close.
+                        </p>
+
+                        {openError && (
+                          <div
+                            className='mt-2 rounded-[14px] px-3 py-2 text-[12px]'
+                            style={{
+                              background: 'var(--danger-bg)',
+                              color: 'var(--danger)',
+                            }}
+                          >
+                            {openError}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <button onClick={() => navigate(`/admin/elections/${election.id}/categories`)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-                      Categories
-                    </button>
-                    {election.status === 0 && (
-                      <button onClick={() => { setOpeningId(election.id); setOpenError(null); }} className='rounded-[14px] px-3 py-2 text-[12px] font-semibold text-white' style={{ background: 'var(--accent)' }}>
-                        Open
-                      </button>
-                    )}
-                    {election.status === 2 && (
-                      <button onClick={() => navigate(`/elections/${election.id}/results`)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-                        Results
-                      </button>
-                    )}
-                    {election.status !== 1 && (
-                      <button onClick={() => deleteElection(election.id)} className='rounded-[14px] border px-3 py-2 text-[12px] font-medium' style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}>
-                        Delete
-                      </button>
-                    )}
-                  </div>
+                      <div className='flex flex-wrap items-center gap-3'>
+                        <button
+                          onClick={() => handleOpen(election.id)}
+                          disabled={!endDate}
+                          className='rounded-[16px] px-4 py-3 text-[13px] font-semibold text-white disabled:opacity-50'
+                          style={{ background: 'var(--accent)' }}
+                        >
+                          Confirm open
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setOpeningId(null)
+                            setOpenError(null)
+                          }}
+                          className='text-[13px] font-medium'
+                          style={{ color: 'var(--text2)' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </article>
-            )
-          })}
-        </div>
+
+                <div className='flex flex-wrap items-center gap-2'>
+                  <button
+                    onClick={() =>
+                      navigate(`/admin/elections/${election.id}/categories`)
+                    }
+                    className='rounded-[14px] border px-3 py-2 text-[12px] font-medium'
+                    style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                  >
+                    Categories
+                  </button>
+
+                  {election.status === 0 && (
+                    <button
+                      onClick={() => {
+                        setOpeningId(election.id)
+                        setOpenError(null)
+                      }}
+                      className='rounded-[14px] px-3 py-2 text-[12px] font-semibold text-white'
+                      style={{ background: 'var(--accent)' }}
+                    >
+                      Open
+                    </button>
+                  )}
+
+                  {election.status === 2 && (
+                    <button
+                      onClick={() =>
+                        navigate(`/elections/${election.id}/results`)
+                      }
+                      className='rounded-[14px] border px-3 py-2 text-[12px] font-medium'
+                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                    >
+                      Results
+                    </button>
+                  )}
+
+                  {election.status !== 1 && (
+                    <button
+                      onClick={() => deleteElection(election.id)}
+                      className='rounded-[14px] border px-3 py-2 text-[12px] font-medium'
+                      style={{ borderColor: 'var(--border)', color: 'var(--danger)' }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </div>
       </section>
     </div>
   )
