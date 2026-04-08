@@ -25,7 +25,7 @@ export const organizationMemberApi = {
     api.post<ApiResponse<boolean>>(`/organizationmember/${organizationId}/approve/${userId}`),
 
   reject: (organizationId: string, userId: string) => 
-    api.put<ApiResponse<boolean>>(`/organizationmember/${organizationId}/members/${userId}/reject`),
+    api.post<ApiResponse<boolean>>(`/organizationmember/${organizationId}/reject/${userId}`),
 
   getPendingMembers: (organizationId: string) => 
     api.get<ApiResponse<PendingMemberDto[]>>(`/organizationmember/${organizationId}/pending`),

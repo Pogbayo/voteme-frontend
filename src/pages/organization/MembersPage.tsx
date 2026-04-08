@@ -22,9 +22,9 @@ const MembersPage = () => {
     getPendingMembers,
     approveMember,
     rejectMember,
-    removeMember,
-    promoteToAdmin,
-    demoteFromAdmin,
+    // removeMember,
+    // promoteToAdmin,
+    // demoteFromAdmin,
     clearError,
   } = useOrganizationMember()
 
@@ -216,7 +216,7 @@ const MembersPage = () => {
                         </span>
                       )}
 
-                      {member.role === 1 ? (
+                      {/* {member.role === 1 ? (
                         <button
                           type='button'
                           onClick={() => demoteFromAdmin(orgId, member.userId)}
@@ -246,9 +246,9 @@ const MembersPage = () => {
                         >
                           {actionLoadingUserId === member.userId && actionLoadingType === 'promote' ? 'Promoting...' : 'Promote'}
                         </button>
-                      ) : null}
+                      ) : null} */}
 
-                      {member.role !== 2 && (
+                      {/* {member.role !== 2 && (
                         <button
                           type='button'
                           onClick={() => removeMember(orgId, member.userId)}
@@ -263,7 +263,7 @@ const MembersPage = () => {
                         >
                           {actionLoadingUserId === member.userId && actionLoadingType === 'remove' ? 'Removing...' : 'Remove'}
                         </button>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 </article>
